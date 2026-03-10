@@ -1,16 +1,17 @@
 import { RealtimeSession } from '@openai/agents/realtime'
 import type { CallCtx } from './../Interfaces/CallCtx.js';
+import { AbstractSessionHandler } from './abstract-handler.js';
 
-export class SilenceHandler {
+export class SilenceHandler extends AbstractSessionHandler{
 
    private silenceTimeout: NodeJS.Timeout | null = null;
    private SILENCE_MS: number;
-   private session: RealtimeSession<CallCtx>;
+  
    private inToolCall: boolean = false;
    private silenceCounter = 0;
 
    constructor(session: RealtimeSession<CallCtx>, silenceMs: number) {
-      this.session = session;
+      super(session);
       this.SILENCE_MS = silenceMs;
    }
 
