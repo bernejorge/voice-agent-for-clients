@@ -1,7 +1,7 @@
 import { RealtimeSession, type RealtimeContextData } from "@openai/agents/realtime";
 import type { CallCtx } from "../Interfaces/CallCtx.js";
 
-export abstract class AbstractHandler {
+export abstract class AbstractSessionHandler {
 
    protected session: RealtimeSession<CallCtx>; 
 

@@ -1,13 +1,13 @@
 
 import { RealtimeAgent, RealtimeSession, type RealtimeSessionOptions } from "@openai/agents/realtime";
 import type { CallCtx } from "../Interfaces/CallCtx.js";
-import { AbstractHandler } from "../handlers-events/abstract-handler.js";
+import { AbstractSessionHandler } from "../handlers-events/abstract-handler.js";
 
 export abstract class CallFlowFactory {
 
    abstract createAgent(): RealtimeAgent<CallCtx>;
    abstract getSaludoInicial(): string;
-   abstract createSessionHandler(session: RealtimeSession<CallCtx>): AbstractHandler
+   abstract createSessionHandler(session: RealtimeSession<CallCtx>): AbstractSessionHandler
 
    public getSessionOptions(): Partial<RealtimeSessionOptions<CallCtx>> {
       return {

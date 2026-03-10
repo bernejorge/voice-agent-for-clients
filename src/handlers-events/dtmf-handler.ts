@@ -1,9 +1,9 @@
 import { RealtimeSession, type RealtimeContextData } from "@openai/agents/realtime";
 import type { CallCtx } from './../Interfaces/CallCtx.js';
 import type { RunContext } from "@openai/agents";
-import  { AbstractHandler } from "./abstract-handler.js";
+import  { AbstractSessionHandler } from "./abstract-handler.js";
 
-export class DtmfDniHandler extends AbstractHandler {
+export class DtmfDniHandler extends AbstractSessionHandler {
    //private readonly session: RealtimeSession<CallCtx>;
 
    private dniBuffer = "";
