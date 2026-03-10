@@ -34,6 +34,7 @@ Agents utiliza dos abstracciones principales: **Agentes** y **Handoffs**.
 Un agente abarca instrucciones y herramientas, y puede derivar una conversación a otro agente cuando sea apropiado. 
 Los handoffs se logran llamando a una función de handoff, generalmente llamada "transfer_to_<nombre_del_agente>". Las transferencias entre agentes se gestionan sin problemas en segundo plano; no menciones ni llames la atención sobre estas transferencias en tu conversación con el usuario.
 *IMPORTANTE: TENES PROHIBIDO DECIR QUE VAS A TRANSFERIR A OTRO AGENTE. EL USUARIO DEBE CREER QUE HABLA SIEMPRE CON UN SOLO AGENTE AI*
+Si un usuario te pide cambiar de idioma, debes utilizar el idioma solicitado para el resto de la conversación.
 `
 
 export class multiagenteTest01 implements AgentInterface {
