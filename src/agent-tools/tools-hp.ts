@@ -5,7 +5,7 @@
 // ------------------------------------------------------------
 import { z } from "zod";
 import { tool } from "@openai/agents/realtime";
-import type { CallCtx } from "../interfaces/CallCtx.js";
+import type { CallCtx } from "./../Interfaces/CallCtx.js";
 import { estaEnHorarioAtencion } from "./../utils/horarios_atencion.js"
 import { success } from "zod/v4";
 import { postProcessHorariosWithOpenAI } from "./../utils/post-procesador-horarios.js";
