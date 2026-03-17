@@ -23,4 +23,4 @@ COPY package*.json ./
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/app.js"]
+CMD ["node", "dist/app.js"]
