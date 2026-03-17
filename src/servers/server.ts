@@ -44,7 +44,7 @@ export class Server {
 
   public async main(): Promise<void> {
     const fastify = fastifyFactory();
-    
+
     await fastify.register(fastifyRawBody, {
       field: 'rawBody',
       global: false,
@@ -204,8 +204,26 @@ export class Server {
 
     const sessionHandler = this.factory.createSessionHandler(session);
     const saludoInicial = this.factory.getSaludoInicial();
+    const handleSessionError = (event: any) => {
+      const error = event?.error?.error ?? event?.error ?? event;
+      const code = error?.code;
+
+      if (code === 'conversation_already_has_active_response') {
+        console.warn(
+          `[${callId}] Ignoring realtime overlap error: ${error?.message ?? code}`,
+        );
+        return;
+      }
+
+      console.error(`[${callId}] Realtime session error:`, event);
+    };
 
     try {
+      //session.on('error', handleSessionError);
+      session.on('error', (event) => {
+        console.error('Realtime session error:', event.error);
+      });
+      
       sessionHandler.initialize();
 
       await session.connect({ apiKey: this.apiKey, callId });
@@ -237,6 +255,8 @@ export class Server {
       } catch (e) {
         console.error('Error removing listeners:', e);
       }
+
+      session.off('error', handleSessionError);
 
       session.close();
 
