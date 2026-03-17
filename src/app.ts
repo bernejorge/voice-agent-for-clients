@@ -11,8 +11,7 @@ function buildCallFlowFactory(): CallFlowFactory {
   switch (callFlow) {
     case "HP":
       return new HPCallFlowFactory();
-   
-   // completar con otros factorias para otros clientes
+      // completar con otros factorias para otros clientes
 
     default:
       throw new Error(
@@ -28,7 +27,7 @@ async function bootstrap(): Promise<void> {
 
     await server.main();
   } catch (error) {
-    console.error("Failed to bootstrap application.", error);
+    console.error("Failed to start application.", error);
     process.exit(1);
   }
 }

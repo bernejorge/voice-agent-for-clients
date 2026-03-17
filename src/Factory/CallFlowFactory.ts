@@ -38,7 +38,7 @@ export abstract class CallFlowFactory {
    }
 
    protected getModel(): string {
-      return "gpt-realtime";
+      return "gpt-realtime-1.5";
    }
 
    protected getLanguage(): string {

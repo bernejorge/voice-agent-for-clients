@@ -44,7 +44,7 @@ export class Server {
 
   public async main(): Promise<void> {
     const fastify = fastifyFactory();
-
+    
     await fastify.register(fastifyRawBody, {
       field: 'rawBody',
       global: false,

@@ -14,6 +14,7 @@ import { multiagenteTest01 } from "../Agents/hp/muiltiple-test-01.js";
 export class HPCallFlowFactory extends CallFlowFactory {
 
    public createAgent(): RealtimeAgent<CallCtx> {
+      // multiagenteTest01 funciona como un buider de agentes
       return new multiagenteTest01().getAgent();
    }
 
