@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "type": "module",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/app.js",
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/app.js",
+    "dev": "tsx src/app.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "@types/node": "^25.3.5",
     "tsx": "^4.21.0",
