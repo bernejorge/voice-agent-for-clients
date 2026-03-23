@@ -41,7 +41,7 @@ Preamble sample phrases:
 - Voy a validar el dni del paciente.
 - Dejame buscar el dni en el sistema.
 - Voy a verificar si el dni esta empadronado.
-- Un momento por favor, estoy validando el dni del paciente.`, 
+- Un momento por favor, estoy validando el dni del paciente.`,
    parameters: z.object({
       dni: z.string().describe("Número de DNI o documento del usuario a validar."),
    }),
@@ -55,18 +55,24 @@ Preamble sample phrases:
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
-         if(!data.exito && data.mensaje){
+         if (!data.exito && data.mensaje) {
             return { success: false, error: data.mensaje };
-         }else if(!data.exito){  
+         } else if (!data.exito) {
             return { success: false, data };
          }
 
+         let isPAMI = false;
          if (Array.isArray(data.coberturas)) {
             const excluir = ["PARTICULAR", "APROSS"];
             data.coberturas = data.coberturas.filter(
                (cob: any) => !excluir.some((ex) => cob.nombre.includes(ex))
             );
+            isPAMI = data.coberturas.some(
+               (c: any) => typeof c?.nombre === "string" && c.nombre.toLowerCase().includes("pami")
+            );
+            
          }
+
          let instrucciones = `
          # Instrucciones para manejar esta respuesta.
          - No informes al usuario de los Ids
@@ -74,7 +80,7 @@ Preamble sample phrases:
          ## Instrucciones de validadcion para obtener un nuevo turno 
          - Si el usuario esta intentando obtner turnos segui estas instrucciones
          - Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
-         - Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si procede con la unica vigente.
+         - Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si solo tiene una, procede con la unica vigente.
          - Realiza la transferencia al agente especializado proactivamente sin decirle al usuario.
 
          ## Instrucciones de validacion para cancelar, consultar o reprogramar turnos
@@ -82,13 +88,22 @@ Preamble sample phrases:
          - Si el usuario esta empadronado y tiene al menos una cobertura vigente hace la transferencia al agente especializado proactivamente sin decirle al usuario.
          - Si no tiene que niguna cobertura informale que podra consultar turnos pero no podra obtener uno nuevo o reprogramar.         
          ` ;
-         if( data.coberturas.length === 0 ) {
-            instrucciones = "El paciente no posee cobertura válida para gestionar turnos en el Hospital Privado de Córdoba.";
-         }else if( data.coberturas.length > 1 ) {
-            instrucciones = "El paciente posee más de una cobertura. Pedile que elija una para continuar. ";
-         }else{
-            instrucciones = "El paciente posee una cobertura válida. Continuar con la gestión de turnos con el IdCobertura: " + data.coberturas[0].idCobertura;
+
+         if(isPAMI){
+            instrucciones += `
+            ## Instrucciones para cobertura PAMI.
+            - Para la cobertura PAMI solo esta disponible agendar turnos para el servicio de oftalmologia o para profesionales en dicho servicio.
+            - Si el paciente solo posee cobertura PAMI o elije PAMI como su cobertura para gestionar el turno, informar que solo podra gestionar turnos para oftalmologia.
+            `
          }
+
+         if (data.coberturas.length === 0) {
+            instrucciones = "El paciente no posee cobertura válida para gestionar turnos en el Hospital Privado de Córdoba. Ofrecele transferir a un asistente humano";
+         } //else if( data.coberturas.length > 1 ) {
+         //    instrucciones = "El paciente posee más de una cobertura. Pedile que elija una para continuar. ";
+         // }else{
+         //    instrucciones = "El paciente posee una cobertura válida. Continuar con la gestión de turnos con el IdCobertura: " + data.coberturas[0].idCobertura;
+         // }
 
          instrucciones += 'Si el usuario esta intentando cancelar o consultar turnos asignados, no es necesario informarle las coberturas, ni necesario que eliga una. Solo es necesario el IdPersona para usar la herramienta *hp_obtener_mis_proximos_turnos* para recuperar sus turnos asignados.';
          return { success: true, data, instrucciones };
@@ -128,7 +143,6 @@ export const hp_buscar_servicios = tool({
       }
    },
 });
-
 
 // ---------------- OBTENER CENTROS ----------------
 export const hp_obtener_centros_para_el_servicio = tool({
@@ -196,8 +210,8 @@ export const buscar_turnos = tool({
 
          let instrucciones = "";
          //TODO: revisar si el backend devuelve turnos. Si no hay turnos generar una instruccion diciendole al agente que no hay turnos disponibles a partir de la fecha en adelante.
-         if(data.Turnos && data.Turnos.length === 0) {
-            
+         if (data.Turnos && data.Turnos.length === 0) {
+
             instrucciones = `
             No hay turnos disponibles a partir de la fecha indicada. Si no se indico fecha, significa que no hay turnos disponibles en el futuro para la combinación de parámetros indicada. 
             Si no se indico IdCentroAtencion, significa que se busco en todos los centros.
@@ -205,22 +219,22 @@ export const buscar_turnos = tool({
             Solo sugerir alternativas si el usuario indico un centro o profesional específico o fecha posterior a la actual.
             `;
 
-         }else{
-            if(!parameters.IdCentroAtencion) {
+         } else {
+            if (!parameters.IdCentroAtencion) {
                instrucciones += "Si el usuario quiere en un centro especifico, usa la herramienta *hp_obtener_todos_los_centros_atencion* para obtener el IdCentroAtencion y luego busca nuevamente los turnos con ese IdCentroAtencion. ";
             }
-            if(!parameters.IdProfesional) instrucciones += "Si el usuario quiere con un profesional especifico, usa la herramienta *hp_buscar_profesional* para obtener el IdProfesional y luego busca nuevamente los turnos con ese IdProfesional. ";
+            if (!parameters.IdProfesional) instrucciones += "Si el usuario quiere con un profesional especifico, usa la herramienta *hp_buscar_profesional* para obtener el IdProfesional y luego busca nuevamente los turnos con ese IdProfesional. ";
 
             instrucciones += `
             #Intrucciones para gestionar la respuesta al usuario:
             - Agrupar los turnos por fecha.
-            - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay turnos a las 9:00 y 14:00hs."
+            - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos 3 turnos, a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay 2 turnos, a las 9:00 y 14:00hs."
             - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (IdTurno, fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
             - Si el usuario confirma, usá la herramienta *asignar_turno* para asignarle ese turno.
             `
          }
 
-         if(parameters.multiple) instrucciones += "\n - Si estas buscando multples turnos, no des las opciones hasta no encontrar las coincidencias mas proximas"
+         if (parameters.multiple) instrucciones += "\n - Si estas buscando multples turnos, no des las opciones hasta no encontrar las coincidencias mas proximas"
 
          return { success: true, data, instrucciones };
       } catch (error: any) {
@@ -379,9 +393,9 @@ export const hp_obtener_mis_proximos_turnos = tool({
    }),
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] hp_obtener_mis_proximos_turnos:`, parameters);
-      
-      const url = `${process.env.BACKEND_URL}/turnos/mis-turnos`;  
-      
+
+      const url = `${process.env.BACKEND_URL}/turnos/mis-turnos`;
+
       const options = {
          method: 'POST',
          headers: {
@@ -455,7 +469,7 @@ Usar esta herramienta cuando el usuario solicita hablar con un operador humano o
    parameters: z.object({
       motivo: z.string().describe("Motivo por el cual se transfiere la llamada."),
    }), // sin parámetros
-    execute: async (parameters, ctx) => {
+   execute: async (parameters, ctx) => {
       const callId = (ctx?.context as CallCtx)?.callId;
       if (!callId) {
          return {
@@ -464,8 +478,8 @@ Usar esta herramienta cuando el usuario solicita hablar con un operador humano o
          };
       };
 
-      if( !estaEnHorarioAtencion() ) {
-         return{
+      if (!estaEnHorarioAtencion()) {
+         return {
             success: false,
             message: "No es posible derivar la llamada fuera del horario de atención.",
          };
@@ -509,7 +523,7 @@ Usar esta herramienta cuando el usuario solicita hablar con un operador humano o
          }
 
          console.log(`✅ Llamada derivada correctamente a ${targetUri}`);
-         
+
          // 2️⃣ Intentar finalizar la llamada en OpenAI (sin interrumpir si falla)
          try {
             setTimeout(async () => {
@@ -549,64 +563,64 @@ Usar esta herramienta cuando el usuario solicita hablar con un operador humano o
 
 // ---------------- COLGAR LLAMADA ----------------
 export const colgar_llamada = tool({
-  name: "colgar_llamada",
-  description: `finaliza la llamada actual (hangup). Usar cuando la conversación ha terminado o el usuario lo solicita. 
+   name: "colgar_llamada",
+   description: `finaliza la llamada actual (hangup). Usar cuando la conversación ha terminado o el usuario lo solicita. 
 Preamble sample phrases
 *IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
 - Voy a colgar la llamada, que tengas un buen día.
 - Finalizo la llamada, gracias por comunicarte con el Hospital Privado de Córdoba.
 - Voy a finalizar la llamada, que tengas un buen día.
  `,
-  parameters: z.object({
-    reason: z.string().optional().describe("Motivo del corte (opcional)."),
-  }),
-  execute: async (_args, ctx) => {
-    // Retornar una promesa que se resuelve después del timeout
-    return new Promise((resolve) => {
-      setTimeout(async () => {
-        const callId = (ctx?.context as CallCtx)?.callId;
-        if (!callId) {
-          resolve({
-            success: false,
-            error: "No hay callId disponible en el contexto.",
-          });
-          return;
-        }
+   parameters: z.object({
+      reason: z.string().optional().describe("Motivo del corte (opcional)."),
+   }),
+   execute: async (_args, ctx) => {
+      // Retornar una promesa que se resuelve después del timeout
+      return new Promise((resolve) => {
+         setTimeout(async () => {
+            const callId = (ctx?.context as CallCtx)?.callId;
+            if (!callId) {
+               resolve({
+                  success: false,
+                  error: "No hay callId disponible en el contexto.",
+               });
+               return;
+            }
 
-        const url = `https://api.openai.com/v1/realtime/calls/${encodeURIComponent(callId)}/hangup`;
+            const url = `https://api.openai.com/v1/realtime/calls/${encodeURIComponent(callId)}/hangup`;
 
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
-          });
+            try {
+               const res = await fetch(url, {
+                  method: "POST",
+                  headers: {
+                     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                  },
+               });
 
-          if (!res.ok) {
-            const text = await res.text();
-            resolve({
-              success: false,
-              error: `Error al colgar (${res.status}): ${text}`,
-            });
-            return;
-          }
+               if (!res.ok) {
+                  const text = await res.text();
+                  resolve({
+                     success: false,
+                     error: `Error al colgar (${res.status}): ${text}`,
+                  });
+                  return;
+               }
 
-          console.log(`Llamada ${callId} finalizada correctamente.`);
-          resolve({
-            success: true,
-            message: "Llamada finalizada correctamente.",
-          });
-        } catch (error: any) {
-          console.error("Error al colgar la llamada:", error);
-          resolve({
-            success: false,
-            error: error.message,
-          });
-        }
-      }, 5000); // Espera 5 segundos antes de cortar
-    });
-  },
+               console.log(`Llamada ${callId} finalizada correctamente.`);
+               resolve({
+                  success: true,
+                  message: "Llamada finalizada correctamente.",
+               });
+            } catch (error: any) {
+               console.error("Error al colgar la llamada:", error);
+               resolve({
+                  success: false,
+                  error: error.message,
+               });
+            }
+         }, 5000); // Espera 5 segundos antes de cortar
+      });
+   },
 });
 
 // ---------------- FECHA Y HORA ACTUAL DE ARGENTINA (UTC-3) ----------------
@@ -782,10 +796,10 @@ export const hp_buscar_por_subespecialidad = tool({
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] hp_buscar_por_subespecialidad:`, parameters);
 
-      const url = `${process.env.BACKEND_URL}/buscar_profesionales_subespecialidad_hp?subespecialidad=${parameters.subespecialidad}`;   
-      
+      const url = `${process.env.BACKEND_URL}/buscar_profesionales_subespecialidad_hp?subespecialidad=${parameters.subespecialidad}`;
+
       try {
-         const response = await fetch(url, {headers: {"Content-Type": "application/json"}} );
+         const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
 
          // leer body aunque sea error
          const raw = await response.text();
@@ -794,7 +808,7 @@ export const hp_buscar_por_subespecialidad = tool({
             data = raw ? JSON.parse(raw) : null;
          } catch {
             data = { raw };
-         }    
+         }
          if (!response.ok) {
             const msg =
                data?.Mensaje ??
@@ -804,7 +818,7 @@ export const hp_buscar_por_subespecialidad = tool({
                `HTTP ${response.status}`;
             return {
                success: false,
-               status: response.status,   
+               status: response.status,
                message: msg,
                data, // te dejo el payload completo para debug/LLM
             };
@@ -826,7 +840,7 @@ export const hp_buscar_por_subespecialidad = tool({
             5. Si el usuario confirma Usar la herramienta *"asignar_turno"*  para asignar el turno seleccionado.
             6. Informar al usuario si el turno fue asignado exitosamente y preguntar si podes ayudar en algo mas.
          `;
-        
+
          return { success: true, data, instrucciones };
       } catch (error: any) {
          console.error("Error al buscar profesionales por subespecialidad:", error.message);
@@ -854,7 +868,7 @@ export const hp_obtener_horarios_de_atencion_profesional = tool({
             data = raw ? JSON.parse(raw) : null;
          } catch {
             data = { raw };
-         }    
+         }
          if (!response.ok) {
             const msg =
                data?.Mensaje ??
@@ -864,7 +878,7 @@ export const hp_obtener_horarios_de_atencion_profesional = tool({
                `HTTP ${response.status}`;
             return {
                success: false,
-               status: response.status,   
+               status: response.status,
                message: msg,
                data, // te dejo el payload completo para debug/LLM
             };
@@ -1116,38 +1130,38 @@ NORMAS DE VISITA
 
 
 export const BuscarTurnosItemSchema = z.object({
-  IdPersona: z.number(),
-  IdCobertura: z.number(),
-  IdServicio: z.number(),
-  IdPrestacion: z.number(),
-  IdCentroAtencion: z
-    .number()
-    .nullable()
-    .describe(
-      "ID del centro de atención. Opcional. Si no se proporciona, se buscarán turnos en todos los centros."
-    ),
-  fecha: z
-    .string()
-    .nullable()
-    .describe(
-      "Fecha a partir de la cual buscar turnos, en formato yyyy-MM-dd. Si no se indica, se buscará a partir de la fecha actual."
-    ),
-  IdProfesional: z
-    .number()
-    .nullable()
-    .optional()
-    .describe(
-      "ID del profesional. Opcional. Si no se proporciona, se buscarán turnos con cualquier profesional."
-    ),
-  DiasSemana: z.string().nullable().optional(),
-  horaDesde: z.string().nullable().optional(),
-  horaHasta: z.string().nullable().optional(),
+   IdPersona: z.number(),
+   IdCobertura: z.number(),
+   IdServicio: z.number(),
+   IdPrestacion: z.number(),
+   IdCentroAtencion: z
+      .number()
+      .nullable()
+      .describe(
+         "ID del centro de atención. Opcional. Si no se proporciona, se buscarán turnos en todos los centros."
+      ),
+   fecha: z
+      .string()
+      .nullable()
+      .describe(
+         "Fecha a partir de la cual buscar turnos, en formato yyyy-MM-dd. Si no se indica, se buscará a partir de la fecha actual."
+      ),
+   IdProfesional: z
+      .number()
+      .nullable()
+      .optional()
+      .describe(
+         "ID del profesional. Opcional. Si no se proporciona, se buscarán turnos con cualquier profesional."
+      ),
+   DiasSemana: z.string().nullable().optional(),
+   horaDesde: z.string().nullable().optional(),
+   horaHasta: z.string().nullable().optional(),
 });
 
 // 2) Nueva herramienta: array de ese objeto
 export const buscar_multiples_turnos = tool({
-  name: "buscar_multiples_turnos",
-  description: `Busca turnos para múltiples consultas/pacientes en un solo llamado.
+   name: "buscar_multiples_turnos",
+   description: `Busca turnos para múltiples consultas/pacientes en un solo llamado.
 
 Preamble sample phrases:
 *IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
@@ -1156,58 +1170,58 @@ Preamble sample phrases:
 - Voy a consultar en el sistema los turnos para cada solicitud.
 - Estoy verificando opciones de turnos para múltiples pacientes/consultas...
 `,
-  parameters: z.object({
-    solicitudes: z
-      .array(BuscarTurnosItemSchema)
-      .min(1)
-      .describe("Listado de solicitudes de búsqueda de turnos."),
-  }),
-  execute: async ({ solicitudes }, ctx) => {
-    console.log(
-      `[${timestamp(ctx?.context as CallCtx)}] buscar_multiples_turnos:`,
-      solicitudes
-    );
-
-    // Opción A (recomendada si tu backend lo soporta): endpoint bulk
-    // const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles_bulk`;
-    // body: { solicitudes }
-
-    // Opción B (sin endpoint bulk): hacer N llamadas al endpoint actual
-    const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles`;
-
-    try {
-      const results = await Promise.all(
-        solicitudes.map(async (params, index) => {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(params),
-          });
-
-          if (!response.ok) {
-            return {
-              index,
-              params,
-              success: false as const,
-              error: `HTTP error! status: ${response.status}`,
-            };
-          }
-
-          const data = await response
-            .json()
-            .catch(async () => ({ result: await response.text() }));
-
-          return {
-            index,
-            params,
-            success: true as const,
-            data,
-          };
-        })
+   parameters: z.object({
+      solicitudes: z
+         .array(BuscarTurnosItemSchema)
+         .min(1)
+         .describe("Listado de solicitudes de búsqueda de turnos."),
+   }),
+   execute: async ({ solicitudes }, ctx) => {
+      console.log(
+         `[${timestamp(ctx?.context as CallCtx)}] buscar_multiples_turnos:`,
+         solicitudes
       );
 
-      // Instrucciones para el agente (pensadas para “múltiples”)
-      let instrucciones = `
+      // Opción A (recomendada si tu backend lo soporta): endpoint bulk
+      // const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles_bulk`;
+      // body: { solicitudes }
+
+      // Opción B (sin endpoint bulk): hacer N llamadas al endpoint actual
+      const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles`;
+
+      try {
+         const results = await Promise.all(
+            solicitudes.map(async (params, index) => {
+               const response = await fetch(url, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(params),
+               });
+
+               if (!response.ok) {
+                  return {
+                     index,
+                     params,
+                     success: false as const,
+                     error: `HTTP error! status: ${response.status}`,
+                  };
+               }
+
+               const data = await response
+                  .json()
+                  .catch(async () => ({ result: await response.text() }));
+
+               return {
+                  index,
+                  params,
+                  success: true as const,
+                  data,
+               };
+            })
+         );
+
+         // Instrucciones para el agente (pensadas para “múltiples”)
+         let instrucciones = `
 # Instrucciones para gestionar la respuesta al usuario (múltiples solicitudes):
 - Informa al usuario los turnos mas proximos entre si.
 - Si no hay turnos disponibles en el mismo dia para todas las solicitudes, informa al usuario de la situacion y ofrece opciones:
@@ -1216,10 +1230,10 @@ Preamble sample phrases:
    3. Ofrecer buscar en otros centros. Si el usuario acepta esta opcion, podes proactivamente usar esta herramienta para todos los centros disponibles sin necesidad de que el usuario te lo pida, para maximizar las chances de encontrar turnos cercanos entre si.
 `;
 
-      return { success: true, results, instrucciones };
-    } catch (error: any) {
-      console.error("Error al buscar múltiples turnos:", error.message);
-      return { success: false, error: error.message };
-    }
-  },
+         return { success: true, results, instrucciones };
+      } catch (error: any) {
+         console.error("Error al buscar múltiples turnos:", error.message);
+         return { success: false, error: error.message };
+      }
+   },
 });

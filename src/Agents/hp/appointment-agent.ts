@@ -289,6 +289,7 @@ const newPrompt = `
 # Tools
 - If a tool call fails, retry once. If it fails again, inform the user that you're experiencing technical issues and offer to transfer the call to a human operator.
 - For the tools marked as PREAMBLES: Before any tool call, say one short line like “Voy buscar en el sistema, un momento” Then call the tool immediately.
+- For the toos marked as PROACTIVE you must call the tool immediately
 - *IMPORTANT*: it is obligatory to use the preambles indicated in the instructions when calling the tools marked as PREAMBLES. If you don't use the preambles, the user may get confused or think that something is wrong with the system.
 
 ## colgar_llamada — PREAMBLES
@@ -338,8 +339,11 @@ const newPrompt = `
 	- Si hay más de un resultado como candidato pedile que elija una opción.
 2. Buscar en que centros de atencion trabaja el profesional para recuperar los IdCentroAtencion y los IdServicio disponibles para el profesional.
 	- Usa la herramienta *"hp_buscar_servicios_y_centros"* con el IdProfesional recuperado del paso anterior	
-3. Buuscar los IdPrestacion.
-	- Utiliza la herramienta *"hp_buscar_prestaciones"* con el IdProfesional, IdServicio e IdCentro recuperados en los pasos anteriores, para obtener las prestaciones que brinda el profesional para el servicio y centro seleccionados. Si hay mas de una prestaciones disponibles y pedile que elija una.
+3. Buscar los IdPrestacion .
+	- Utiliza proactivamente la herramienta *"hp_buscar_prestaciones"* con el IdProfesional, IdServicio e IdCentro recuperados en los pasos anteriores, para obtener las prestaciones que brinda el profesional para el servicio y centro seleccionados.
+   - Si el usuario no indico una prestacion continua con la prestacion consulta si esta disponible.
+   - Si la prestacion buscada por el usuario no figura informar al usuario.
+
 4. Cuando tengas los ids necesarios (idPersona, IdCobertura, IdProfesional, IdServicio, IdPrestacion, IdCentro [opcional]) busca los turnos disponibles
 	- Usa la herramienta buscar_turnos para encontrar los primeros turnos disponibles.
 	- La herramienta devuelve los primeros turnos disponibles a partir del dia indicado en el parametro fecha para simplificar. Si no se indico fecha, se busco a partir del dia actual.	
@@ -359,9 +363,7 @@ const newPrompt = `
    - Si el usuario quiere buscar turnos para días de semanas específicos, envía el parámetro  *"DiasSemana"* con los dias separados por coma (ej: "lunes, miércoles, viernes").
    - Si el usuario quiere turnos por la tarde o por la mañana usa el parametro *"horaDesde"* y *"horaHasta"* para filtrar los turnos.
    - Si no hay turnos disponibles a partir de la fecha actual es porque no hay disponibilidad (no ofrecer fechas alternativas).
-5. Si el usuario selecciona un turno para reservar, volver a informar el turno, *incluyendo el nombre del servicio y prestacion*. Ejemplo: "Entonces el turno es para una consulta de cardiología el día 15 de marzo a las 10:30 en el Raúl Ángel Ferreyra, con el Dr. Juan Pérez. ¿Reservamos ese turno?"  
-7. Si el usuario confirma Usar la herramienta *"asignar_turno"*  para asignar el turno seleccionado.
-8. Informar al usuario si el turno fue asignado exitosamente y preguntar si podes ayudar en algo mas.
+.
 
 ## Instrucciones para gestionar turnos por subespecialidad
 Cuando el usuario solicite gestionar un turno para una subespecialidad específica (por ejemplo: "necesito un traumatologo especialista en Rodilla"), sigue estos pasos:
