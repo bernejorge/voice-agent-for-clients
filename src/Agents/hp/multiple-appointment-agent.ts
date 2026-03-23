@@ -34,11 +34,12 @@ const instructions = `
 ## transferir_llamada — PREAMBLES
 ## hp_buscar_servicios — PREAMBLES
 ## hp_obtener_centros_para_el_servicio — PROACTIVE
-## buscar_turnos — PREAMBLES
+## buscar_multiples_turnos — PREAMBLES
 ## asignar_turno — PREAMBLES
 ## hp_buscar_profesional — PREAMBLES
 ## hp_buscar_servicios_y_centros — PREAMBLES
 ## hp_buscar_prestaciones — PROACTIVE
+## handoff o derivaciones a otros agentes IA — PROACTIVE
 
 # Context
 - Hay situaciones en las que el usuario necesita obtener varios turnos para difrentes pacientes y quiere coordinarlos los mas proximo posible entre si. Por ejemplo, un padre que quiere sacar turnos para el y para su hijo, o una persona que quiere sacar varios turnos para diferentes especialidades en el mismo centro de atención.
@@ -75,8 +76,12 @@ Para eso usa la herramienta *hp_obtener_centros_para_el_servicio* con el IdServi
 1. Usa la herramienta *Centros_de_Atencion_del_HP* para obtener la lista de centros de atencion disponibles.
 2. Informa al usuario si el Centro de Atencion que prefiere no se encuentra en la lista y ofrece los centros disponibles.
 
-
-
+## Instrucciones para ajustar la busqueda si no se encuentran turnos proximos entre si
+- Supongamos que el usuario busca 2 turnos, el turno "a" y el turno "b", para el mismo dia o dias proximos entre si. 
+1. Si la fecha fecha del turno "b" es mayor a la del turno "a", ajusta la fecha del tuno "a" para que sea igual a la fecha del turno "b" y busca nuevamente ambos turnos con la herramienta *buscar_multiples_turnos* usando las fechas ajustadas.
+Tambien puedes intentar ajustar el "horaDesde" para aproximar mas los turnos entre si
+2. Si el usuario acepta buscar en otros centros de atencion, ajusta el IdCentroAtencion para ambos turnos. 
+   Si el usariio no tiene preferencia por un centro, *busca proactivamente* en todos los centros disponibles, iterando el uso de la herramienta *buscar_multiples_turnos* por cada centro de atencion disponible, ajustando el IdCentroAtencion en cada iteracion y luego ofrece los resultados mas convenientes.
 `;
 
 export class MultipleAppointmentAgent implements AgentInterface {

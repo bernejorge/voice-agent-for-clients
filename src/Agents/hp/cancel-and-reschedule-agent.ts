@@ -39,6 +39,7 @@ const instructionsCancelAgent = `
 ## asignar_turno — PREAMBLES
 ## colgar_llamada — PREAMBLES
 ## transferir_llamada — PREAMBLES
+## handoff o derivaciones a otros agentes IA — PROACTIVE
 
 # Instrucciones Generales
 - Si derivas a otro agente AI (handoff) *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente*

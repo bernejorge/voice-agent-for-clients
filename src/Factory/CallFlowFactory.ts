@@ -12,7 +12,11 @@ export abstract class CallFlowFactory {
    public getSessionOptions(): Partial<RealtimeSessionOptions<CallCtx>> {
       return {
          model: this.getModel(),
+         tracingDisabled: false,
          config: {
+            tracing:{
+               group_id: "HP",
+            },
             audio: {
                input: {
                   format: "pcm16",

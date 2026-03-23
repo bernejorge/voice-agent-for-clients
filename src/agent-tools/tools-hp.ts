@@ -67,7 +67,21 @@ Preamble sample phrases:
                (cob: any) => !excluir.some((ex) => cob.nombre.includes(ex))
             );
          }
-         let instrucciones = "";
+         let instrucciones = `
+         # Instrucciones para manejar esta respuesta.
+         - No informes al usuario de los Ids
+         
+         ## Instrucciones de validadcion para obtener un nuevo turno 
+         - Si el usuario esta intentando obtner turnos segui estas instrucciones
+         - Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
+         - Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si procede con la unica vigente.
+         - Realiza la transferencia al agente especializado proactivamente sin decirle al usuario.
+
+         ## Instrucciones de validacion para cancelar, consultar o reprogramar turnos
+         - Si el usuario esta intentando cancelar, consultar o reprogramar turnos, no es necesario informale sus coberturas.
+         - Si el usuario esta empadronado y tiene al menos una cobertura vigente hace la transferencia al agente especializado proactivamente sin decirle al usuario.
+         - Si no tiene que niguna cobertura informale que podra consultar turnos pero no podra obtener uno nuevo o reprogramar.         
+         ` ;
          if( data.coberturas.length === 0 ) {
             instrucciones = "El paciente no posee cobertura válida para gestionar turnos en el Hospital Privado de Córdoba.";
          }else if( data.coberturas.length > 1 ) {
@@ -994,6 +1008,18 @@ Sábados, Domingos y Feriados: 09:00 a 19:00 hs (recepción por Guardia Externa)
 - Microbiología: Lunes a Viernes, 07:00 a 19:00 hs
 - Hemoterapia – Extracciones: Lunes a Viernes, 07:00 a 13:30 hs
 - Hemoterapia – Banco de sangre: Lunes a Viernes, 07:00 a 15:30 hs
+
+ECG:
+   Para Electrocardiograma (ECG) no necesitás sacar turno 👍
+   Podés presentarte directamente dentro del horario de atención:
+
+      - Central: Lunes a viernes de 08:30 A 18:30 por orden de llegada
+      - Nuñez: Lunes a viernes de 7 A 15:20 por orden de llegada
+      - Villa Allende: Lunes a viernes de 8 A 15:30 por orden de llegada
+      - Patio Olmos: Con turno
+      - Cerro de las Rosas: lun a vie 08:00–20:00
+      - Híper Libertad: lun a vie 08:00–20:00
+
 
 --------------------------------------------------------------
 1) SEDES Y CENTROS

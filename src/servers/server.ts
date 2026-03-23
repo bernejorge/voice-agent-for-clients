@@ -223,7 +223,11 @@ export class Server {
       session.on('error', (event) => {
         console.error('Realtime session error:', event.error);
       });
-      
+
+      session.on('agent_handoff', (_context, fromAgent, toAgent) => {
+        console.info(`Handing off from ${fromAgent.name} to ${toAgent.name}.`);
+      });
+
       sessionHandler.initialize();
 
       await session.connect({ apiKey: this.apiKey, callId });
