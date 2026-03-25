@@ -46,8 +46,8 @@ const instructionsAuthenticateAgent = `
 ## handoff o derivaciones a otros agentes IA — PROACTIVE
 
 # Context
-- Se se pueden otorgar turnos para Odontologia, Psiquiatría, Psicología y Salud Mental. Deberá consultar con un operador humano. Ofrece derivar si estas dentro del horario de atencion sino informar que llame dentro del horario de atencion.
-- Por el momento solo se agendan turnos para consultas y no tienes la capacidad de dar turnos para estudios medicos, estudios por imagen y practicas como por ejemplo fisio terapia, ecografias, resonancias. Si el usuario necesita un turno para estos estudios medicos o practicas ofrecele derivar la llamada con un asistente humano.
+- Se se pueden otorgar turnos para Odontologia, Psiquiatría, Psicología y Salud Mental. Deberá consultar con un operador humano. Ofrece derivar sin autenticar si estas dentro del horario de atencion sino informar que llame dentro del horario de atencion.
+- Por el momento solo se agendan turnos para consultas y no tienes la capacidad de dar turnos para estudios medicos, estudios por imagen y practicas como por ejemplo fisio terapia, ecografias, resonancias. Si el usuario necesita un turno para estos estudios medicos o practicas ofrecele derivar la llamada con un asistente humano antes de autenticarlo.
 
 # Instructions/Rules
 

@@ -55,10 +55,24 @@ Preamble sample phrases:
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
+          let instrucciones = `
+          # Intrucciones para el manejo de errores.
+          - Diferenciar de errores tecnicos o errores porque el dni no figura empadronado en el sistema
+          
+          ## Intrucciones para el manejo de error por DNI no empadronado
+          - Repetir el DNI ingresado digito por digito e informar que no esta empadronado. Ejemplo: 'El Dni 1-2-3-4-5-6-7-8 no esta empadronado.'
+          - Si el numero ingresado tiene algun error de tipeo ofrece re-intentar validar al paciente nuevamete con el dni correcto. 
+          - Si el numero fue correctamente ingresado, sugerir derivar con un asistente humano para gestionar el empadronamiento.
+
+          ## Instrucciones para errores 
+          - Informar al usuario de que estas experimentando errores tecnicos.
+          - Reintentar otra vez mas. Si el error persiste ofrecer derivar con un asistente humano.
+          `
+
          if (!data.exito && data.mensaje) {
-            return { success: false, error: data.mensaje };
+            return { success: false, error: data.mensaje, instrucciones: instrucciones};
          } else if (!data.exito) {
-            return { success: false, data };
+            return { success: false, data, instrucciones: instrucciones };
          }
 
          let isPAMI = false;
@@ -73,7 +87,7 @@ Preamble sample phrases:
             
          }
 
-         let instrucciones = `
+          instrucciones = `
          # Instrucciones para manejar esta respuesta.
          - No informes al usuario de los Ids
          
@@ -272,7 +286,7 @@ export const asignar_turno = tool({
             body: JSON.stringify(parameters),
          });
          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-         return { success: true, data: await response.json(), instrucciones: '*Importante:* Informa al usuario que el turno ha sido asignado exitosamente.' };
+         return { success: true, data: await response.json(), instrucciones: '*Importante:* Informa al usuario que el turno ha sido asignado exitosamente y recibirá un mail con la confirmación.' };
       } catch (error: any) {
          console.error("Error al asignar turno:", error.message);
          return { success: false, error: error.message };
