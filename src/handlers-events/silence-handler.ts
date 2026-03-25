@@ -62,7 +62,7 @@ export class SilenceHandler extends AbstractSessionHandler{
       this.session.on("agent_tool_end", () => {
          // El agente terminó de usar una herramienta
          this.inToolCall = false;
-         //this.stopSilenceTimer();
+         this.stopSilenceTimer();
       });
 
 
