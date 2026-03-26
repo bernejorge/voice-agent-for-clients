@@ -1,22 +1,12 @@
 import { RealtimeAgent } from '@openai/agents/realtime';
 import {
-   validarDni,
-   hp_buscar_servicios,
-   hp_obtener_centros_para_el_servicio,
    buscar_turnos,
    asignar_turno,
-   hp_buscar_profesional,
-   hp_buscar_servicios_y_centros,
-   hp_buscar_prestaciones,
    hp_obtener_mis_proximos_turnos,
    anular_turno,
    colgar_llamada,
    transferir_llamada,
-   Centros_de_Atencion_del_HP,
-   hp_buscar_por_subespecialidad,
-   hp_fecha_hora_argentina,
-   hp_obtener_horarios_de_atencion_profesional,
-   hp_informacion_general
+   
 } from '../../agent-tools/tools-hp.js';
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 import type { AgentInterface } from './../agent-interface.js';
