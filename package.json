@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/app.js",
     "dev": "tsx src/app.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:hp-tools": "tsx src/agent-tools/manual-test-hp-tools.ts"
   },
   "keywords": [],
   "author": "",

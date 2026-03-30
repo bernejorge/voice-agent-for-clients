@@ -9,6 +9,8 @@ import type { CallCtx } from "./../Interfaces/CallCtx.js";
 import { estaEnHorarioAtencion } from "./../utils/horarios_atencion.js"
 import { success } from "zod/v4";
 import { postProcessHorariosWithOpenAI } from "./../utils/post-procesador-horarios.js";
+import { th } from "zod/locales";
+import type { CentrosServiciosDelProfesional, CentrosServiciosPrestacionesDelProfesional } from "../Interfaces/Dtos.js";
 
 
 // Helper para obtener la fecha y hora en formato legible en español (24 horas, UTC-3)
@@ -55,7 +57,7 @@ Preamble sample phrases:
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
-          let instrucciones = `
+         let instrucciones = `
           # Intrucciones para el manejo de errores.
           - Diferenciar de errores tecnicos o errores porque el dni no figura empadronado en el sistema
           
@@ -70,7 +72,7 @@ Preamble sample phrases:
           `
 
          if (!data.exito && data.mensaje) {
-            return { success: false, error: data.mensaje, instrucciones: instrucciones};
+            return { success: false, error: data.mensaje, instrucciones: instrucciones };
          } else if (!data.exito) {
             return { success: false, data, instrucciones: instrucciones };
          }
@@ -84,10 +86,10 @@ Preamble sample phrases:
             isPAMI = data.coberturas.some(
                (c: any) => typeof c?.nombre === "string" && c.nombre.toLowerCase().includes("pami")
             );
-            
+
          }
 
-          instrucciones = `
+         instrucciones = `
          # Instrucciones para manejar esta respuesta.
          - No informes al usuario de los Ids
          
@@ -95,7 +97,7 @@ Preamble sample phrases:
          - Si el usuario esta intentando obtner turnos segui estas instrucciones
          - Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
          - Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si solo tiene una, procede con la unica vigente.
-         - Realiza la transferencia al agente especializado proactivamente sin decirle al usuario.
+         - Realiza la transferencia al agente especializado *INMEDIATAMENTE EN FORMA PROACTIVA* sin decirle al usuario.
 
          ## Instrucciones de validacion para cancelar, consultar o reprogramar turnos
          - Si el usuario esta intentando cancelar, consultar o reprogramar turnos, no es necesario informale sus coberturas.
@@ -103,7 +105,7 @@ Preamble sample phrases:
          - Si no tiene que niguna cobertura informale que podra consultar turnos pero no podra obtener uno nuevo o reprogramar.         
          ` ;
 
-         if(isPAMI){
+         if (isPAMI) {
             instrucciones += `
             ## Instrucciones para cobertura PAMI.
             - Para la cobertura PAMI solo esta disponible agendar turnos para el servicio de oftalmologia o para profesionales en dicho servicio.
@@ -211,6 +213,11 @@ export const buscar_turnos = tool({
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] buscar_turnos:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles`;
+
+      if(!parameters.IdPrestacion ) return { success: false, error: "El IdPrestacion es requerido para buscar turnos." };
+      if(!parameters.IdServicio ) return { success: false, error: "El IdServicio es requerido para buscar turnos." };
+      if(!parameters.IdCobertura ) return { success: false, error: "El IdCobertura es requerido para buscar turnos." }; 
+      if(!parameters.IdPersona ) return { success: false, error: "El IdPersona es requerido para buscar turnos." };
 
       try {
          const response = await fetch(url, {
@@ -1251,3 +1258,94 @@ Preamble sample phrases:
       }
    },
 });
+
+export const hp_recuperar_servicios_y_prestaciones = tool({
+   name: "hp_recuperar_servicios_y_prestaciones",
+   description: `Utiliza esta herramienta para obtener la lista de servicios y prestaciones que ofrece el profesional en el Hospital Privado de Córdoba. Esta información es útil para conocer las opciones disponibles y poder ofrecer turnos adecuados a los pacientes.`,
+   parameters: z.object({
+      IdProfesional: z.number().describe("ID del profesional a consultar."),
+   }),
+   execute: async (parameters, context) => {
+      
+      console.log(`[${timestamp(context?.context as CallCtx)}] hp_recuperar_servicios_y_prestaciones:`, parameters);
+
+      try {
+         let centros = await recuperarCentrosServiciosDelProfesional(parameters.IdProfesional);
+
+         if (centros.length === 0) {
+            console.log("El profesional no tiene centros de atencion asociados.");
+            return { success: true, data: [], message: "El profesional no tiene centros de atención asociados." };;
+         }
+
+         centros = Array.isArray(centros) ? centros : [centros]; // Asegurar que es un array
+
+         const prestacionesDisponibles = (
+            await Promise.all(
+               centros.map(async (centro) => {
+                  const prestaciones = await recuperarServiciosYPrestacionesDelProfesionalEnCentro(centro.IdProfesional, centro.IdCentroAtencion, centro.IdServicio);
+                  return prestaciones.map((prestacion: any) => ({
+                     idProfesional: centro.IdProfesional,
+                     IdCentroAtencion: centro.IdCentroAtencion,
+                     NombreCentroAtencion: centro.NombreCentroAtencion,
+                     IdServicio: centro.IdServicio,
+                     NombreServicio: centro.NombreServicio,
+                     IdPrestacion: prestacion.IdPrestacion,
+                     Prestacion: prestacion.NombrePrestacion
+                  }));
+               })
+            )
+         ).flat();
+
+         return { success: true, data: prestacionesDisponibles };
+      } catch (error) {
+         console.error("Error al buscar servicios y centros del profesional:", error);
+         return { success: false, error: (error as Error).message };
+      }
+
+   }
+});
+
+export const recuperarCentrosServiciosDelProfesional: (IdProfesional: number) => Promise<CentrosServiciosDelProfesional[]> = async (IdProfesional: number) => {
+   const url = `${process.env.BACKEND_URL}/turnoshp/obtener-servicios-centros?IdProfesional=${IdProfesional}`;
+   try {
+      const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json().catch(async () => ({ result: await response.text() }));
+
+      const lista = Array.isArray(data?.ListaCentroAtencionServicio)
+         ? data.ListaCentroAtencionServicio
+         : [];
+
+      const centros_servicios = lista.map((item: any) => ({
+         IdCentroAtencion: item.IdCentroAtencion,
+         IdProfesional: item.IdRecurso,
+         IdServicio: item.IdServicio,
+         NombreCentroAtencion: item.NombreCentroAtencion,
+         NombreProfesional: item.NombreRecurso,
+         NombreServicio: item.NombreServicio,
+      }));
+
+      return centros_servicios;
+
+   } catch (error) {
+      console.error("Error al recuperar centros del profesional:", error);
+      throw error;
+   }
+};
+
+export const recuperarServiciosYPrestacionesDelProfesionalEnCentro: (IdProfesional: number, IdCentroAtencion: number, IdServicio: number) => Promise<CentrosServiciosPrestacionesDelProfesional[]> = async (IdProfesional: number, IdCentroAtencion: number, IdServicio: number) => {
+   const url = `${process.env.BACKEND_URL}/turnos/obtener-prestaciones`;
+   try {
+      const response = await fetch(url, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ IdProfesional, IdCentroAtencion, IdServicio }),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json().catch(async () => ({ result: await response.text() }));
+      return data.Prestaciones;
+   } catch (error) {
+      console.error("Error al recuperar servicios y prestaciones del profesional en centro:", error);
+      throw error;
+   }
+};
