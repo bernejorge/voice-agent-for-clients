@@ -18,7 +18,7 @@ export class SilenceHandler extends AbstractSessionHandler{
 
    // Handlers que vamos a poder desuscribir luego
    private readonly onTransportEvent = (event: any) => {
-      //console.log("EVENT →", event.type, event);
+      console.log("EVENT →", event.type, event);
 
       //EVENT → input_audio_buffer.speech_started {type: 'input_audio_buffer.speech_started', event_id: 'event_D9fplDEw8ocb5S2RtRJHc', item_id: 'item_D9fplJYASzfG1GP9zLOrA', audio_start_ms: 24748}
 
@@ -41,12 +41,13 @@ export class SilenceHandler extends AbstractSessionHandler{
 
          console.info(`SILENCE-TIMER ON`)
       } else if (event.type === "conversation.item.truncated") {
-         // si se trunca es una interrupcion del usuario.
-      
+         // si se trunca es una interrupcion del usuario.      
         
+      } else if (event.type === "response.output_audio_transcript.delta" ) {
+         // Si el agente esta hablando
+         this.stopSilenceTimer();
       }
    };
-
 
    public initialize() {
 

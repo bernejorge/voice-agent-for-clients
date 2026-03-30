@@ -222,6 +222,7 @@ export class Server {
       //session.on('error', handleSessionError);
       session.on('error', (event) => {
         console.error('Realtime session error:', event.error);
+      
       });
 
       session.on('agent_handoff', (_context, fromAgent, toAgent) => {

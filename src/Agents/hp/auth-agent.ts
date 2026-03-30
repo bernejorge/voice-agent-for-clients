@@ -108,6 +108,7 @@ export class AuthenticateAgent implements AgentInterface {
             transferir_llamada,
             hp_buscar_profesional,
             hp_obtener_horarios_de_atencion_profesional,
+            // hp_obtener_horarios_de_atencion_profesional
             hp_informacion_general
          ]
       });

@@ -95,14 +95,15 @@ Preamble sample phrases:
          
          ## Instrucciones de validadcion para obtener un nuevo turno 
          - Si el usuario esta intentando obtner turnos segui estas instrucciones
-         - Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
-         - Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si solo tiene una, procede con la unica vigente.
-         - Realiza la transferencia al agente especializado *INMEDIATAMENTE EN FORMA PROACTIVA* sin decirle al usuario.
+         1. Deriva **INMEDIATAMENTE** al agente especializado en gestion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+         2. Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
+         3. Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si solo tiene una, procede con la unica vigente.
+        
 
          ## Instrucciones de validacion para cancelar, consultar o reprogramar turnos
          - Si el usuario esta intentando cancelar, consultar o reprogramar turnos, no es necesario informale sus coberturas.
-         - Si el usuario esta empadronado y tiene al menos una cobertura vigente hace la transferencia al agente especializado proactivamente sin decirle al usuario.
-         - Si no tiene que niguna cobertura informale que podra consultar turnos pero no podra obtener uno nuevo o reprogramar.         
+         1. Deriva **INMEDIATAMENTE** al agente especializado en cancelacion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+         2. No es necesario que el paciente elija una cobertura para este caso, solo es necesario el IdPersona para usar la herramienta *hp_obtener_mis_proximos_turnos* para recuperar sus turnos asignados.     
          ` ;
 
          if (isPAMI) {
@@ -121,7 +122,7 @@ Preamble sample phrases:
          //    instrucciones = "El paciente posee una cobertura válida. Continuar con la gestión de turnos con el IdCobertura: " + data.coberturas[0].idCobertura;
          // }
 
-         instrucciones += 'Si el usuario esta intentando cancelar o consultar turnos asignados, no es necesario informarle las coberturas, ni necesario que eliga una. Solo es necesario el IdPersona para usar la herramienta *hp_obtener_mis_proximos_turnos* para recuperar sus turnos asignados.';
+         //instrucciones += 'Si el usuario esta intentando cancelar o consultar turnos asignados, no es necesario informarle las coberturas, ni necesario que eliga una. Solo es necesario el IdPersona para usar la herramienta *hp_obtener_mis_proximos_turnos* para recuperar sus turnos asignados.';
          return { success: true, data, instrucciones };
       } catch (error: any) {
          console.error("Error al validar DNI:", error.message);
@@ -1295,6 +1296,13 @@ export const hp_recuperar_servicios_y_prestaciones = tool({
                })
             )
          ).flat();
+         let instrucciones = `
+         # Instrucciones para continuar con la busqueda de turnos
+         1. Si el usuario no indico centro de atencion y el profesional atiende en varios centros, buscar turnos sin IdCentroAtencion.
+         2. Si el usuario no indico prestacion especifica, buscar turnos con el IdPrestacion *consulta* si esta disponible.
+         3. Si el profesional ofrece varios *servicios*, preguntar al usuario por cual servicio quiere turno.
+         4. No ofrezcas opciones si no es necesario. Debes ser lo mas proactivo posible para buscar turnos.
+         `;
 
          return { success: true, data: prestacionesDisponibles };
       } catch (error) {
