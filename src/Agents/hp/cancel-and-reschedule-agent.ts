@@ -6,6 +6,8 @@ import {
    anular_turno,
    colgar_llamada,
    transferir_llamada,
+   obtener_dias_feriados,
+   hp_fecha_hora_argentina,
    
 } from '../../agent-tools/tools-hp.js';
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
@@ -31,7 +33,7 @@ const instructionsCancelAgent = `
 ## transferir_llamada — PREAMBLES
 ## handoff o derivaciones a otros agentes IA — PROACTIVE
 
-# Instrucciones Generales
+# Instructions/Rules
 - Si derivas a otro agente AI (handoff) *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente*
 - Para validar a los pacientes, obtener IdPersona o IdCobertura debes hacer un hand off al agente de autenticación especializado en eso.
 - Para asignar turnos debes hacer un hand off al agente de turnos especializado en eso.
@@ -41,13 +43,19 @@ const instructionsCancelAgent = `
 - Always respond in the same language the user is speaking in, if unintelligible.
 - Only respond to clear audio or text. 
 - If the user's audio is not clear (e.g. ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification using {preferred_language} phrases.
+- Suggest the user to move to a quieter place or to call back if the audio quality is poor.
 
-## Instrucciones para consultar turnos asignados al usuario y/o cancelarlos
-1. Decile al usuario "Estoy buscando tus proximos turnos, un momento" y usa la herramienta *"hp_obtener_mis_proximos_turnos"* con el IdPersona recuperado en el paso anterior, para obtener los próximos turnos asignados al usuario.
+## Instrucciones para consultar turnos asignados al usuario 
+1. Usa la herramienta *"hp_obtener_mis_proximos_turnos"* con el IdPersona recuperado en el paso anterior, para obtener los próximos turnos asignados al usuario.
+2. Informa al usuario los próximos turnos asignados, incluyendo fecha, hora, centro de atención y profesional (si aplica).
+
+## Instrucciones para cancelar turnos
+1. Usa la herramienta *"hp_obtener_mis_proximos_turnos"* con el IdPersona recuperado en el paso anterior, para obtener los próximos turnos asignados al usuario.
 2. Informa al usuario los próximos turnos asignados, incluyendo fecha, hora, centro de atención y profesional (si aplica).
 3. Si el usuario desea cancelar un turno, pedile que seleccione uno de los turnos informados.
-4. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno.
-5. Informa al usuario que el turno ha sido cancelado exitosamente y pregunta si podes ayudar en algo mas.
+4. Luego de que el usuario seleccione el turno a cancelar, confirma con el usuario que ese es el turno que desea cancelar.
+5. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno.
+6. Informa al usuario que el turno ha sido cancelado exitosamente y pregunta si podes ayudar en algo mas.
 
 ## Instrucciones para reprogramar un turno o cambiarlo por otro
 Cuando el usuario solicite reprogramar un turno o cambiarlo por otro, sigue estos pasos:
@@ -58,13 +66,13 @@ Cuando el usuario solicite reprogramar un turno o cambiarlo por otro, sigue esto
    - Si el usuario desea buscar turnos para otra fecha, repite este paso con la nueva fecha indicada por el usuario.
 4. Informa al usuario los nuevos turnos disponibles encontrados y pedile que seleccione uno de ellos.
 5. Luego de asignar el nuevo turno, informa al usuario que el nuevo turno ha sido asignado exitosamente y que ahora vas a cancelar el turno anterior.
-5. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno anterior.`;
+6. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno anterior.`;
 
 export class CancelAndRescheduleAgent implements AgentInterface {
    getAgent(): RealtimeAgent<CallCtx> {
       return new RealtimeAgent<CallCtx>({
          name: "Agente_de_Cancelación_y_Reprogramación_HP",
-         handoffDescription: `Este agente especializado en cancelacion. 
+         handoffDescription: `Este agente es el especializado en cancelacion, consulta de turnos asignados y reprogramacion de turnos. 
          Se encarga de consultar, reprogramar y cancelar turnos de los pacientes del Hospital Privado de Córdoba.
          Derivar a este agente cuando el usuario solicite consultar sus turnos, cancelar un turno, reprogramar un turno o cambiarlo por otro.
          `,
@@ -75,7 +83,9 @@ export class CancelAndRescheduleAgent implements AgentInterface {
             buscar_turnos,
             asignar_turno,
             colgar_llamada,   
-            transferir_llamada
+            transferir_llamada,
+            hp_fecha_hora_argentina,
+            obtener_dias_feriados,
          ]
       });
    }
