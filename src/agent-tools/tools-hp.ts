@@ -93,12 +93,11 @@ Preamble sample phrases:
          # Instrucciones para manejar esta respuesta.
          - No informes al usuario de los Ids
          
-         ## Instrucciones de validadcion para obtener un nuevo turno 
+         ## Instrucciones de validacion para obtener un nuevo turno 
          - Si el usuario esta intentando obtner turnos segui estas instrucciones
-         1. Deriva **INMEDIATAMENTE** al agente especializado en gestion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
-         2. Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
-         3. Si el paciente tiene mas de una cobertura debe elegir una para gestionar el turno. Si solo tiene una, procede con la unica vigente.
-        
+         1. Indicale al usuario el nombre del paciente registrado con el DNI que ingreso. 
+         2. Deriva **INMEDIATAMENTE** al agente especializado en gestion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+                 
 
          ## Instrucciones de validacion para cancelar, consultar o reprogramar turnos
          - Si el usuario esta intentando cancelar, consultar o reprogramar turnos, no es necesario informale sus coberturas.
@@ -215,10 +214,10 @@ export const buscar_turnos = tool({
       console.log(`[${timestamp(ctx?.context as CallCtx)}] buscar_turnos:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnoshp/obtener_primeros_turnos_disponibles`;
 
-      if(!parameters.IdPrestacion ) return { success: false, error: "El IdPrestacion es requerido para buscar turnos." };
-      if(!parameters.IdServicio ) return { success: false, error: "El IdServicio es requerido para buscar turnos." };
-      if(!parameters.IdCobertura ) return { success: false, error: "El IdCobertura es requerido para buscar turnos." }; 
-      if(!parameters.IdPersona ) return { success: false, error: "El IdPersona es requerido para buscar turnos." };
+      if (!parameters.IdPrestacion) return { success: false, error: "El IdPrestacion es requerido para buscar turnos." };
+      if (!parameters.IdServicio) return { success: false, error: "El IdServicio es requerido para buscar turnos." };
+      if (!parameters.IdCobertura) return { success: false, error: "El IdCobertura es requerido para buscar turnos." };
+      if (!parameters.IdPersona) return { success: false, error: "El IdPersona es requerido para buscar turnos." };
 
       try {
          const response = await fetch(url, {
@@ -245,15 +244,28 @@ export const buscar_turnos = tool({
             if (!parameters.IdCentroAtencion) {
                instrucciones += "Si el usuario quiere en un centro especifico, usa la herramienta *hp_obtener_todos_los_centros_atencion* para obtener el IdCentroAtencion y luego busca nuevamente los turnos con ese IdCentroAtencion. ";
             }
-            if (!parameters.IdProfesional) instrucciones += "Si el usuario quiere con un profesional especifico, usa la herramienta *hp_buscar_profesional* para obtener el IdProfesional y luego busca nuevamente los turnos con ese IdProfesional. ";
+            if (!parameters.IdProfesional) {
+               instrucciones += "Si el usuario quiere con un profesional especifico, usa la herramienta *hp_buscar_profesional* para obtener el IdProfesional y luego busca nuevamente los turnos con ese IdProfesional. ";
+            }
 
-            instrucciones += `
-            #Intrucciones para gestionar la respuesta al usuario:
-            - Agrupar los turnos por fecha.
-            - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos 3 turnos, a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay 2 turnos, a las 9:00 y 14:00hs."
-            - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (IdTurno, fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
-            - Si el usuario confirma, usá la herramienta *asignar_turno* para asignarle ese turno.
-            `
+            if (parameters.IdCentroAtencion && parameters.IdProfesional) {
+               instrucciones += `
+               #Intrucciones para gestionar la respuesta al usuario:
+               - Agrupar los turnos por fecha.
+               - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos 3 turnos, a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay 2 turnos, a las 9:00 y 14:00hs."
+               - Luego que el usuario eliga un turno, usá la herramienta *asignar_turno* para asignarle ese turno.
+               - Si el usuario manifiesta que se equivoco o si asignaste un turno por error, informale que no hay problema, que se puede cancelar el turno asignado.
+               `
+
+            } else {
+               instrucciones += `
+               #Intrucciones para gestionar la respuesta al usuario:
+               - Agrupar los turnos por fecha.
+               - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos 3 turnos, a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay 2 turnos, a las 9:00 y 14:00hs."
+               - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (IdTurno, fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
+               - Si el usuario confirma, usá la herramienta *asignar_turno* para asignarle ese turno.
+               `
+            }
          }
 
          if (parameters.multiple) instrucciones += "\n - Si estas buscando multples turnos, no des las opciones hasta no encontrar las coincidencias mas proximas"
@@ -293,8 +305,33 @@ export const asignar_turno = tool({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(parameters),
          });
-         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-         return { success: true, data: await response.json(), instrucciones: '*Importante:* Informa al usuario que el turno ha sido asignado exitosamente y recibirá un mail con la confirmación.' };
+
+         const raw = await response.text();
+         let data: any;
+         try {
+            data = raw ? JSON.parse(raw) : null;
+         } catch {
+            data = { result: raw };
+         }
+
+         if (!response.ok) {
+            // si backend devuelve { Mensaje: "..." } o { data: { Mensaje: "..." } }
+            const msg =
+               data?.Mensaje ??
+               data?.mensaje ??
+               data?.data?.Mensaje ??
+               data?.data?.mensaje ??
+               `HTTP ${response.status}`;
+
+            return {
+               success: false,
+               error: msg,
+               instrucciones: `Error al asignar turno: ${msg}. Informar al usuario que hubo un error al asignar el turno.`
+            };
+         }
+
+         //if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+         return { success: true, data, instrucciones: '*Importante:* Informa al usuario que el turno ha sido asignado exitosamente y recibirá un mail con la confirmación.' };
       } catch (error: any) {
          console.error("Error al asignar turno:", error.message);
          return { success: false, error: error.message };
@@ -499,6 +536,22 @@ Usar esta herramienta cuando el usuario solicita hablar con un operador humano o
             error: "No hay callId disponible en el contexto de la llamada.",
          };
       };
+
+      const feriados = [
+         "2026-04-02", // Jueves Santo
+         "2026-04-03", // Viernes Santo
+      ]
+
+      const now = new Date();
+      const hoy = now.toISOString().split("T")[0];
+      const esFeriado = hoy ? feriados.includes(hoy) : false;
+
+      if (esFeriado) {
+         return {
+            success: false,
+            message: "No es posible derivar la llamada hoy porque es un día feriado.",
+         };
+      }
 
       if (!estaEnHorarioAtencion()) {
          return {
@@ -726,13 +779,6 @@ export const Centros_de_Atencion_del_HP = tool({
       "Telefono": "0351-4688200"
     },
     {
-      "Id": 17,
-      "Nombre": "Cerro",
-      "Direccion": "Luis de Tejeda 4625. Córdoba. CP 5000.",
-      "Email": null,
-      "Telefono": "0351-4688200"
-    },
-    {
       "Id": 33,
       "Nombre": "Ctro Perif. Finochietto",
       "Direccion": "Enrique Finocchietto 460",
@@ -872,13 +918,13 @@ export const hp_buscar_por_subespecialidad = tool({
 });
 
 export const hp_obtener_horarios_de_atencion_profesional = tool({
-   name: "hp_buscar_horarios_profesional",
+   name: "hp_obtener_horarios_de_atencion_profesional",
    description: `Utiliza esta herramienta para obtener los horarios de atención de un profesional en el hospital. Devuelve los días y horas en que el profesional atiende, agrupados por centro de atención y servicio.`,
    parameters: z.object({
       IdProfesional: z.number().describe("ID del profesional a consultar."),
    }),
    execute: async (parameters, context) => {
-      console.log(`[${timestamp(context?.context as CallCtx)}] hp_buscar_horarios_profesional:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] hp_obtener_horarios_de_atencion_profesional:`, parameters);
       const callId = (context?.context as CallCtx)?.callId || "desconocido";
       const url = `${process.env.BACKEND_URL}/turnoshp/recuperar_horarios_atencion?IdProfesional=${parameters.IdProfesional}`;
       try {
@@ -912,7 +958,7 @@ export const hp_obtener_horarios_de_atencion_profesional = tool({
             ? { success: true, status: response.status, data, formatted }
             : { success: true, status: response.status, data };
       } catch (error: any) {
-         console.error("Error al buscar horarios del profesional:", error.message);
+         console.error("Error al obtener horarios de atención del profesional:", error.message);
          return { success: false, error: error.message };
       }
    },
@@ -950,7 +996,7 @@ R: La especialidad de Dermatología se encuentra disponible en varias sedes:
    - Núñez (Av. Rafael Núñez 5229, Córdoba).
    - Patio Olmos (Obispo Trejo 320, Córdoba).
    - Villa Allende (Río de Janeiro 1725, Villa Allende).
-   - Cerro de las Rosas (Luis de Tejeda 4625, Córdoba).
+  
    Podés sacar turno por Central de Turnos o por WhatsApp.
 
 2. Internaciones y Visitas
@@ -987,7 +1033,7 @@ R: Los vacunatorios funcionan en varias sedes:
    - Central (Pediátrico: 08:00 a 13:00 y 14:00 a 15:00 h / Adultos: 09:00 a 16:30 h).
    - Villa Allende: 08:20 a 15:40 h.
    - Patio Olmos: 08:00 a 15:20 h (fines de semana y feriados: 10:30 a 12:30 h y 14:00 a 20:00 h).
-   - Cerro de las Rosas: 09:40 a 13:00 h y 14:00 a 15:00 h.
+   
    Importante: Se debe pedir turno previamente al (0351) 468 8888.
 
 5. Donaciones
@@ -1019,7 +1065,6 @@ R: El Hospital Privado cuenta con las siguientes sedes y centros:
    - Núñez (Av. Rafael Núñez 5229, Córdoba).
    - Patio Olmos (Obispo Trejo 320, Córdoba).
    - Villa Allende (Río de Janeiro 1725, Villa Allende).
-   - Cerro de las Rosas (Luis de Tejeda 4625, Córdoba).
    - Hiper Libertad (Fray Luis Beltrán y Cardeñosa, Córdoba).
    - Centros de Rehabilitación: Jardín Espinosa, Recta Martinolli y Finochietto.
 
@@ -1053,7 +1098,7 @@ ECG:
       - Nuñez: Lunes a viernes de 7 A 15:20 por orden de llegada
       - Villa Allende: Lunes a viernes de 8 A 15:30 por orden de llegada
       - Patio Olmos: Con turno
-      - Cerro de las Rosas: lun a vie 08:00–20:00
+
       - Híper Libertad: lun a vie 08:00–20:00
 
 
@@ -1100,11 +1145,6 @@ ECG:
       - Consultorios: Lun–Vie 08:00 a 22:00 h | Sáb, Dom y feriados 10:00 a 21:00 h
       - Laboratorio: Lun–Vie 08:00 a 18:30 h | Sáb 10:00 a 13:00 h
       
-[6] Hospital Privado Cerro de las Rosas
-    Dirección: Hugo Wast 5331, Córdoba Capital
-    Teléfono: (0351) 5697600
-    Horarios:
-      - Consultorios: Lun–Vie 08:00 a 20:00 h
 
 [7] C.I.R.E.D. – Jardín Espinosa
     Dirección: Av. Richieri 3717, Córdoba Capital
@@ -1267,7 +1307,7 @@ export const hp_recuperar_servicios_y_prestaciones = tool({
       IdProfesional: z.number().describe("ID del profesional a consultar."),
    }),
    execute: async (parameters, context) => {
-      
+
       console.log(`[${timestamp(context?.context as CallCtx)}] hp_recuperar_servicios_y_prestaciones:`, parameters);
 
       try {
@@ -1283,16 +1323,29 @@ export const hp_recuperar_servicios_y_prestaciones = tool({
          const prestacionesDisponibles = (
             await Promise.all(
                centros.map(async (centro) => {
-                  const prestaciones = await recuperarServiciosYPrestacionesDelProfesionalEnCentro(centro.IdProfesional, centro.IdCentroAtencion, centro.IdServicio);
-                  return prestaciones.map((prestacion: any) => ({
-                     idProfesional: centro.IdProfesional,
-                     IdCentroAtencion: centro.IdCentroAtencion,
-                     NombreCentroAtencion: centro.NombreCentroAtencion,
-                     IdServicio: centro.IdServicio,
-                     NombreServicio: centro.NombreServicio,
-                     IdPrestacion: prestacion.IdPrestacion,
-                     Prestacion: prestacion.NombrePrestacion
-                  }));
+                  try {
+                     const prestaciones = await recuperarServiciosYPrestacionesDelProfesionalEnCentro(
+                        centro.IdProfesional,
+                        centro.IdCentroAtencion,
+                        centro.IdServicio
+                     );
+
+                     return prestaciones.map((prestacion: any) => ({
+                        idProfesional: centro.IdProfesional,
+                        IdCentroAtencion: centro.IdCentroAtencion,
+                        NombreCentroAtencion: centro.NombreCentroAtencion,
+                        IdServicio: centro.IdServicio,
+                        NombreServicio: centro.NombreServicio,
+                        IdPrestacion: prestacion.IdPrestacion,
+                        Prestacion: prestacion.NombrePrestacion
+                     }));
+                  } catch (error) {
+                     console.warn(
+                        `No se pudieron recuperar prestaciones para IdProfesional=${centro?.IdProfesional}, IdCentroAtencion=${centro?.IdCentroAtencion}, IdServicio=${centro?.IdServicio}`,
+                        error
+                     );
+                     return [];
+                  }
                })
             )
          ).flat();
@@ -1304,7 +1357,7 @@ export const hp_recuperar_servicios_y_prestaciones = tool({
          4. No ofrezcas opciones si no es necesario. Debes ser lo mas proactivo posible para buscar turnos.
          `;
 
-         return { success: true, data: prestacionesDisponibles };
+         return { success: true, data: prestacionesDisponibles, instrucciones };
       } catch (error) {
          console.error("Error al buscar servicios y centros del profesional:", error);
          return { success: false, error: (error as Error).message };
@@ -1357,3 +1410,18 @@ export const recuperarServiciosYPrestacionesDelProfesionalEnCentro: (IdProfesion
       throw error;
    }
 };
+
+export const obtener_dias_feriados = tool({
+   name: "obtener_dias_feriados",
+   description: "Devuelve una lista de los próximos días feriados en Argentina, incluyendo su fecha y nombre. Útil para evitar ofrecer derivar a asistentes humanos en esos días.",
+   parameters: z.object({}),
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] obtener_dias_feriados ejecutada`);
+      // TODO: harcodear con las fecha 2 y 3 de abril de 2026
+      const hardcode_data = [
+         { fecha: "2026-04-02", nombre: "Jueves Santo" },
+         { fecha: "2026-04-03", nombre: "Viernes Santo" },
+      ];
+      return { success: true, data: hardcode_data };
+   }
+});
