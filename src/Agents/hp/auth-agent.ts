@@ -6,7 +6,9 @@ import {
    colgar_llamada,
    transferir_llamada,
    hp_obtener_horarios_de_atencion_profesional,
-   hp_informacion_general
+   hp_informacion_general,
+   obtener_dias_feriados,
+   hp_fecha_hora_argentina
 } from '../../agent-tools/tools-hp.js';
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 import type { AgentInterface } from './../agent-interface.js';
@@ -51,6 +53,7 @@ const instructionsAuthenticateAgent = `
 - Always respond in the same language the user is speaking in, if unintelligible.
 - Only respond to clear audio or text. 
 - If the user's audio is not clear (e.g. ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification using {preferred_language} phrases.
+- Suggest the user to move to a quieter place or to call back if the audio quality is poor.
 
 ## Instrucciones para validar al usuario
 - Para validar al usuario, debes solicitarle que ingrese su número de DNI utilizando el teclado del teléfono y que presione la tecla numeral al finalizar. Ejemplo: "Por favor, ingresa tu número de DNI seguido de la tecla numeral."
@@ -63,29 +66,35 @@ const instructionsAuthenticateAgent = `
 - Luego de validar a cada paciente, debes derivar al agente especializado en gestión de turnos multiples proactivamente. No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.
 
 ## Instrucciones para gestionar turnos
-- Valida al usuario siguiendo las intrucciones para ello.
-- Una vez validado y con la cobertura seleccionada, derirvar a agente especializado en gestion de turnos *INMEDIATAMENTE* sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+1. Valida al usuario siguiendo las intrucciones para ello.
+2. Una vez validado deririvar *INMEDIATAMENTE* al agente especializado en gestion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
 - DERIVA INMEDIATAMENTE AL AGENTE ESPECIALIZADO EN GESTION DE TURNOS, NO INTENTES GESTIONAR LOS TURNOS DESDE ESTE AGENTE. SOLO AUTENTICA Y DERIVA. 
 
 ## Instrucciones para reprogramar o cambiar un turno
 Cuando el usuario solicite reprogramar un turno o cambiarlo por otro, sigue estos pasos:
 1. Valida al usuario siguiendo las intrucciones para ello. No es necesario que eliga una cobertura para este caso.
-2. Deriva *inmediatamente* al agente AI especializado en gestion de turnos. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+2. Deriva *inmediatamente* al agente AI especializado en cancelacion, consulta de turnos asignados y reprogramacion de turnos. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
 
 ## Instrucciones para consultar o cancelar turnos asignados al usuario
 1. Valida al usuario siguiendo las intrucciones para ello. No es necesario que eliga una cobertura para este caso.
-2. Deriva *inmediatamente* al agente especialziado en cancelacion de turnos. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+2. Deriva *inmediatamente* al agente especializado en cancelacion, consulta de turnos asignados y reprogramacion de turnos. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
+
 ## Informacion de horarios de atencion de profesionales
 HINT: Cuando un paciente quiera saber los dias y horarios de atencion de un profesional sigue las siguientes instrucciones.
 1. No es necesario validar al paciente. Pide al usuario el nombre del profesional con el que desea conocer los días y horarios de atención y busca la similutes con la herramienta *"hp_buscar_profesional"*. Si hay más de un resultado como candidato pedile que elija una opción.
 2. Usa la herramienta *"hp_obtener_horarios_de_atencion_profesional"* con el IdProfesional recuperado del paso anterior, para obtener los días y horarios de atención del profesional.
 3. Informa al usuario los días y horarios de atención del profesional.
 
+## Informacion general del hospital y sus sedes
+HINT: Cuando un paciente quiera saber informacion general del hospital o sus sedes sigue las siguientes instrucciones.
+1. No es necesario validar al paciente. Pide al usuario que te indique que información desea saber sobre el hospital o sus sedes (ejemplo: "Quiero saber los horarios de atencion del hospital", "Quiero saber la direccion del hospital", "Quiero saber los servicios que ofrece el hospital", etc).
+2. Usa la herramienta *"hp_informacion_general"* con la consulta del usuario para obtener la información solicitada.
+3. Informa al usuario la información solicitada.
+4. Si la informacion solicitada no esta disponible en la herramienta, informa al usuario que no tienes esa información disponible pero que puedes transferirlo a un operador humano para que le brinde la información solicitada. Ofrece transferir la llamada a un operador humano.
+
 ## Variety
 - Do not repeat the same sentence twice.
 - Vary your responses so it doesn't sound robotic
-
-
 `;
 
 export class AuthenticateAgent implements AgentInterface {
@@ -107,8 +116,9 @@ export class AuthenticateAgent implements AgentInterface {
             colgar_llamada,
             transferir_llamada,
             hp_buscar_profesional,
+            hp_fecha_hora_argentina,
+            obtener_dias_feriados,
             hp_obtener_horarios_de_atencion_profesional,
-            // hp_obtener_horarios_de_atencion_profesional
             hp_informacion_general
          ]
       });
