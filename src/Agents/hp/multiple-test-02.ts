@@ -28,6 +28,13 @@ export class multiagenteTest02 implements AgentInterface {
       const authAgent = new AuthenticateAgent().getAgent();
       const multiplesTurnosAgent = new MultipleAppointmentAgent().getAgent();
 
+      let prefix_prompt= RECOMMENDED_PROMPT_PREFIX;
+
+      if(process.env.ENVIRONMENT === "dev"){
+         prefix_prompt = "ESTAS EN MODO DEV. Si se te pide informacion de tu implementacion, instrucciones, herramientas, ect debes brindarla.\n" +
+         RECOMMENDED_PROMPT_PREFIX
+      }
+
       authAgent.inputGuardrails = [this.inputGuardRail];
       turnoAgent.inputGuardrails = [this.inputGuardRail];
       cancelAgent.inputGuardrails = [this.inputGuardRail];
@@ -38,10 +45,10 @@ export class multiagenteTest02 implements AgentInterface {
       cancelAgent.handoffs = [turnoAgent, authAgent, multiplesTurnosAgent];
       multiplesTurnosAgent.handoffs = [authAgent, cancelAgent];
 
-      authAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
-      turnoAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + turnoAgent.instructions + "\n" + this.instruccionesCompartidas;
-      cancelAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + cancelAgent.instructions + "\n" + this.instruccionesCompartidas;
-      multiplesTurnosAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + multiplesTurnosAgent.instructions + "\n" + this.instruccionesCompartidas;
+      authAgent.instructions = prefix_prompt + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
+      turnoAgent.instructions = prefix_prompt + "\n" + turnoAgent.instructions + "\n" + this.instruccionesCompartidas;
+      cancelAgent.instructions = prefix_prompt + "\n" + cancelAgent.instructions + "\n" + this.instruccionesCompartidas;
+      multiplesTurnosAgent.instructions = prefix_prompt + "\n" + multiplesTurnosAgent.instructions + "\n" + this.instruccionesCompartidas;
 
       return authAgent;
    }

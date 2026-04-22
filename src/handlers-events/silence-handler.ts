@@ -18,7 +18,7 @@ export class SilenceHandler extends AbstractSessionHandler{
 
    // Handlers que vamos a poder desuscribir luego
    private readonly onTransportEvent = (event: any) => {
-      console.log("EVENT →", event.type, event);
+      //console.log("EVENT →", event.type, event);
 
       //EVENT → input_audio_buffer.speech_started {type: 'input_audio_buffer.speech_started', event_id: 'event_D9fplDEw8ocb5S2RtRJHc', item_id: 'item_D9fplJYASzfG1GP9zLOrA', audio_start_ms: 24748}
 

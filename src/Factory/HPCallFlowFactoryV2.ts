@@ -19,7 +19,7 @@ export class HPCallFlowFactoryV2 extends CallFlowFactory {
    }
 
    public getSaludoInicial(): string {
-      return "Hola, soy el asistente del Hospital Privado de Córdoba, ¿en qué puedo ayudarte?";
+      return "Hola, soy el asistente virtual del Hospital Privado de Córdoba, ¿en qué puedo ayudarte?";
    }
 
    public createSessionHandler(session: RealtimeSession<CallCtx>): AbstractSessionHandler {

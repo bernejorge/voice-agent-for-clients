@@ -1,5 +1,5 @@
 import { RealtimeAgent } from '@openai/agents/realtime';
-import type { AgentInterface } from './../agent-interface.js'; 
+import type { AgentInterface } from './../agent-interface.js';
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 import {
    validarDni,
@@ -17,7 +17,8 @@ import {
    hp_fecha_hora_argentina,
    hp_obtener_horarios_de_atencion_profesional,
    hp_informacion_general,
-   buscar_multiples_turnos
+   buscar_multiples_turnos,
+   obtener_dias_feriados
 } from '../../agent-tools/tools-hp.js';
 
 const instructions = `
@@ -55,6 +56,12 @@ const instructions = `
 - Usa la herramienta *buscar_multiples_turnos* y luego ofrecer al usuario los turnos que mas se aproximen a lo que el usuario pidió.
 
 - Cuando el usuario confirme los turnos que desea obtener, debes usar la herramienta *"asignar_turno"* para cada turno confirmado por el usuario.
+
+## Unclear audio 
+- Always respond in the same language the user is speaking in, if unintelligible.
+- Only respond to clear audio or text. 
+- If the user's audio is not clear (e.g. ambiguous input/background noise/silent/unintelligible) or if you did not fully hear or understand the user, ask for clarification using {preferred_language} phrases.
+- Suggest the user to move to a quieter place or to call back if the audio quality is poor.
 
 
 ## Intrucciones para buscar IdServicio e IdPrestacion
@@ -104,6 +111,7 @@ export class MultipleAppointmentAgent implements AgentInterface {
             hp_buscar_prestaciones,
             Centros_de_Atencion_del_HP,
             hp_fecha_hora_argentina,
+            obtener_dias_feriados,
             colgar_llamada,
             transferir_llamada,
             hp_buscar_por_subespecialidad,

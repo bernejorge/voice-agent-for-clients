@@ -22,5 +22,7 @@ export function estaEnHorarioAtencion(): boolean {
   // 08:00 ≤ hora < 20:00
   const esHorario: boolean = hour >= 8 && hour < 20;
 
+  
+
   return esDiaHabil && esHorario;
 }
