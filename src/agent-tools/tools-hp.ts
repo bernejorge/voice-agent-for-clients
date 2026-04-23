@@ -260,9 +260,10 @@ export const buscar_turnos = tool({
             } else {
                instrucciones += `
                #Intrucciones para gestionar la respuesta al usuario:
-               - Agrupar los turnos por fecha.
-               - Decirle al usuario el día y luego los turnos disponibles para ese día. Solo informa el dia y luego la hora de cada turno disponible. Por ejemplo: "El 12 de Octubre de 2024 hay turnos 3 turnos, a las 10:00, 11:00 y 15:00hs. El 15 de Octubre de 2024 hay 2 turnos, a las 9:00 y 14:00hs."
-               - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (IdTurno, fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
+               - Agrupar los turnos por centro y fecha.
+               - Decirle al usuario el centro y luego los turnos disponibles por día. Por ejemplo: "En la sede Central hay turnos para el 12 de ocutbre a la mañana y a la tarde. Para el 13 de Octubre solo por la tarde. Despues hay turnos en la Sede Norte para el 15 de Octubre a la mañana."
+               - Luego que el usuario eliga un centro y dia, dar las horas disponibles para ese centro y dia. Por ejemplo: "Para la sede Central el 12 de Octubre hay turnos a las 10:00, 11:00 y 15:00hs. Para el 13 de Octubre hay turnos a las 14:00 y 16:00hs."
+               - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
                - Si el usuario confirma, usá la herramienta *asignar_turno* para asignarle ese turno.
                `
             }
