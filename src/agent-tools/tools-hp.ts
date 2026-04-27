@@ -261,7 +261,7 @@ export const buscar_turnos = tool({
                instrucciones += `
                #Intrucciones para gestionar la respuesta al usuario:
                - Agrupar los turnos por centro y fecha.
-               - Decirle al usuario el centro y luego los turnos disponibles por día. Por ejemplo: "En la sede Central hay turnos para el 12 de ocutbre a la mañana y a la tarde. Para el 13 de Octubre solo por la tarde. Despues hay turnos en la Sede Norte para el 15 de Octubre a la mañana."
+               - Decile al usuario los turnos disponibles por centro, informado fecha y si hay disponibles por la mañana y luego a la tarde. Por ejemplo: "En la sede Central hay turnos para el 12 de ocutbre a la mañana y a la tarde. Para el 13 de Octubre solo por la tarde. Despues hay turnos en la Sede Norte para el 12 de Octubre a la mañana."
                - Luego que el usuario eliga un centro y dia, dar las horas disponibles para ese centro y dia. Por ejemplo: "Para la sede Central el 12 de Octubre hay turnos a las 10:00, 11:00 y 15:00hs. Para el 13 de Octubre hay turnos a las 14:00 y 16:00hs."
                - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
                - Si el usuario confirma, usá la herramienta *asignar_turno* para asignarle ese turno.
@@ -1136,7 +1136,7 @@ ECG:
     Teléfono: (0351) 5697600
     Horarios:
       - Consultorios: Lun–Vie 08:00 a 20:00 h
-      - Laboratorio: Lun–Vie 07:00 a 10:00 h
+      - Laboratorio: No posee.
       
 
 [5] Hospital Privado Patio Olmos

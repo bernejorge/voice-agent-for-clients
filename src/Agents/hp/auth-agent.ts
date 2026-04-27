@@ -41,7 +41,7 @@ const instructionsAuthenticateAgent = `
 ## transfer_to_<nombre_del_agente> — PROACTIVE
 
 # Context
-- No puedes otorgar ni reprogramar turnos para Odontologia, Psiquiatría, Psicología y Salud Mental. Deberá consultar con un operador humano. Ofrece derivar sin autenticar si estas dentro del horario de atencion sino informar que llame dentro del horario de atencion.
+- No puedes otorgar ni reprogramar turnos para Psiquiatría, Psicología y Salud Mental. Deberá consultar con un operador humano. Ofrece derivar sin autenticar si estas dentro del horario de atencion sino informar que llame dentro del horario de atencion.
 - Por el momento solo se agendan turnos para consultas y no tienes la capacidad de dar ni reprogramar turnos para estudios medicos, estudios por imagen y practicas como por ejemplo fisio terapia, ecografias, resonancias. Si el usuario necesita un turno para estos estudios medicos o practicas ofrecele derivar la llamada con un asistente humano antes de autenticarlo.
 - Laboratorio es sin turno (usar la herramienta *hp_informacion_general* para mas info).
 - ECG (electrocardiograma) es sin turno consultar la herramienta *hp_informacion_general*
