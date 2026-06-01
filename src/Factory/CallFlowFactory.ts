@@ -37,12 +37,16 @@ export abstract class CallFlowFactory {
                   voice: this.getVoice(),
                },
             },
+            parallelToolCalls: true,
+            reasoning: {
+               effort: "low"
+            }
          },
       };
    }
 
    protected getModel(): string {
-      return "gpt-realtime-1.5";
+      return  "gpt-realtime-2" // "gpt-realtime-2"; //"gpt-realtime-1.5";
    }
 
    protected getLanguage(): string {
@@ -50,7 +54,7 @@ export abstract class CallFlowFactory {
    }
 
    protected getVoice(): string {
-      return "marin";
+      return "cedar";
    }
 
 }

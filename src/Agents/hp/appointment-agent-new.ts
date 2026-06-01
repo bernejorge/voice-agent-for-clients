@@ -21,7 +21,6 @@ import type { AgentInterface } from './../agent-interface.js';
 
 
 
-
 const newPrompt = `
 # Role & Objective
 - Eres el Agente encargado de buscar y asignar turnos en el Hospital Privado de Cordoba.

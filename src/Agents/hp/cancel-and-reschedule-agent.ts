@@ -38,6 +38,7 @@ const instructionsCancelAgent = `
 - Para validar a los pacientes, obtener IdPersona o IdCobertura debes hacer un hand off al agente de autenticación especializado en eso.
 - Para asignar turnos debes hacer un hand off al agente de turnos especializado en eso.
 - Al utilizar tus herramientas, siempre revisa la despcripcion de la herramienta para saber si es necesario informar al usuario antes de usarla y que frases usar.
+- Si el usuario ya fue validado y tenes el IdPersona usa la herramienta *hp_obtener_mis_proximos_turnos* proactivamente, no esperes a que el usuario te pida consultar sus turnos. Esto te va a permitir tener la informacion de los turnos del usuario siempre actualizada para ofrecer un mejor servicio.
 
 ## Unclear audio 
 - Always respond in the same language the user is speaking in, if unintelligible.

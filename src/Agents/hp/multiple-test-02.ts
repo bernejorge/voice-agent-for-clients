@@ -9,6 +9,7 @@ import { AuthenticateAgent } from '../hp/auth-agent.js';
 import { MultipleAppointmentAgent } from './multiple-appointment-agent.js';
 import type { InputGuardrail} from '@openai/agents';
 import { hospitalInputGuardrail } from './../hp/input-guardrail.js'
+import { StudiesAgent } from './studies-agent.js';
 
 
 
@@ -27,6 +28,7 @@ export class multiagenteTest02 implements AgentInterface {
       const cancelAgent = new CancelAndRescheduleAgent().getAgent();
       const authAgent = new AuthenticateAgent().getAgent();
       const multiplesTurnosAgent = new MultipleAppointmentAgent().getAgent();
+      const studiesAgent = new StudiesAgent().getAgent();
 
       let prefix_prompt= RECOMMENDED_PROMPT_PREFIX;
 
@@ -35,19 +37,21 @@ export class multiagenteTest02 implements AgentInterface {
          RECOMMENDED_PROMPT_PREFIX
       }
 
-      authAgent.inputGuardrails = [this.inputGuardRail];
-      turnoAgent.inputGuardrails = [this.inputGuardRail];
-      cancelAgent.inputGuardrails = [this.inputGuardRail];
-      multiplesTurnosAgent.inputGuardrails = [this.inputGuardRail];
+      // authAgent.inputGuardrails = [this.inputGuardRail];
+      // turnoAgent.inputGuardrails = [this.inputGuardRail];
+      // cancelAgent.inputGuardrails = [this.inputGuardRail];
+      // multiplesTurnosAgent.inputGuardrails = [this.inputGuardRail];
 
-      authAgent.handoffs = [turnoAgent, cancelAgent, multiplesTurnosAgent];
-      turnoAgent.handoffs = [cancelAgent, authAgent, multiplesTurnosAgent];
-      cancelAgent.handoffs = [turnoAgent, authAgent, multiplesTurnosAgent];
-      multiplesTurnosAgent.handoffs = [authAgent, cancelAgent];
+      authAgent.handoffs = [turnoAgent, cancelAgent, multiplesTurnosAgent, studiesAgent];
+      turnoAgent.handoffs = [cancelAgent, authAgent, multiplesTurnosAgent, studiesAgent];
+      cancelAgent.handoffs = [turnoAgent, authAgent, multiplesTurnosAgent, studiesAgent];
+      multiplesTurnosAgent.handoffs = [authAgent, cancelAgent, studiesAgent];
+      studiesAgent.handoffs = [authAgent, cancelAgent, turnoAgent];
 
       authAgent.instructions = prefix_prompt + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
       turnoAgent.instructions = prefix_prompt + "\n" + turnoAgent.instructions + "\n" + this.instruccionesCompartidas;
       cancelAgent.instructions = prefix_prompt + "\n" + cancelAgent.instructions + "\n" + this.instruccionesCompartidas;
+      studiesAgent.instructions = prefix_prompt + "\n" + studiesAgent.instructions + "\n" + this.instruccionesCompartidas;
       multiplesTurnosAgent.instructions = prefix_prompt + "\n" + multiplesTurnosAgent.instructions + "\n" + this.instruccionesCompartidas;
 
       return authAgent;
