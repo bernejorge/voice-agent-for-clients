@@ -1503,7 +1503,7 @@ Preamble sample phrases:
          horaHasta: parameters.horaHasta ?? "",
          horaDesde: parameters.horaDesde ?? "",
          origen_solicitud: "voice-agent",
-         diasSemana: parameters.DiasSemana ?? [],
+         //diasSemana: parameters.DiasSemana ?? [],
       };
 
       try {
