@@ -13,7 +13,7 @@ import {
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 import type { AgentInterface } from './../agent-interface.js';
 
-const instructionsAuthenticateAgent = `
+const AuthenticateAgentinstructions = `
 # Role & Objective 
 - Eres un agente de autenticación para el Hospital Privado de Córdoba. 
 - *Tu objetivo* es autenticar al usuario y rutearlo al agente especializado *INMEDIATAMENTE EN FORMA PROACTIVA*.
@@ -116,7 +116,7 @@ export class AuthenticateAgent implements AgentInterface {
          Tambien puede brindar informacion general del hospital y sus sedes y los horarios de atencion de los profesionales. 
          Tamnbien puede dar informacion de horarios de las sedes de atencion del hospital, etc.
          Derivar a este agente cuando el usuario necesite autenticarse o cuando quiera consultar informacion general del hospital, sus sedes o los horarios de atencion de los profesionales.`,
-         instructions: instructionsAuthenticateAgent,
+         instructions: AuthenticateAgentinstructions,
          tools: [
             validarDni,
             colgar_llamada,
