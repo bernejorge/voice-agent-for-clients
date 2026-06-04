@@ -9,11 +9,13 @@ import type { CallCtx } from "./../Interfaces/CallCtx.js";
 import { success } from "zod/v4";
 import { error } from "console";
 import { postProcessHorariosWithOpenAI } from "./../utils/post-procesador-horarios.js";
+import { estaEnHorarioAtencion } from "./../utils/horarios_atencion.js"
+import type { CentrosServiciosDelProfesional, CentrosServiciosPrestacionesDelProfesional } from "../Interfaces/Dtos.js";
 
 // Helper para obtener la fecha y hora en formato legible en español (24 horas, UTC-3)
-export function timestamp(): string {
+export function timestamp(ctx: CallCtx): string {
    try {
-      return new Date().toLocaleString("es-AR", {
+      const timestamp = new Date().toLocaleString("es-AR", {
          year: "numeric",
          month: "2-digit",
          day: "2-digit",
@@ -23,6 +25,7 @@ export function timestamp(): string {
          hour12: false,
          timeZone: "America/Argentina/Buenos_Aires"
       });
+      return `${timestamp} - ${ctx.callId ? `CallID: ${ctx.callId}` : "No CallID"}`;
    } catch {
       return new Date().toISOString();
    }
@@ -32,7 +35,7 @@ export function timestamp(): string {
 
 // ---------------- VALIDAR DNI ----------------
 export const validarDni = tool({
-   name: "validar_dni",
+   name: "validarDni",
    description:
       "Valida que el número de DNI o documento del usuario se encuentre empadronado en el sistema. Devuelve el IdPersona y las coberturas (cons sus IdCobertura) disponibles del usuario. "  +
       "Antes de llamar a esta herramienta di al usuario: 'Un momneto voy a validar el DNI en el sistema.'",
@@ -42,7 +45,7 @@ export const validarDni = tool({
    execute: async (parameters, context) => {
       const from = (context?.context as CallCtx)?.phoneNumber?.split(" ")[0];
       const callId = (context?.context as CallCtx)?.callId || "unknown";
-      console.log(`[${timestamp()}] - From:[${callId}] Validando DNI ${parameters.dni}...`);
+      console.log(`[${timestamp(context?.context as CallCtx)}] - From:[${callId}] Validando DNI ${parameters.dni}...`);
       const url = `${process.env.BACKEND_URL}/turnos/validar-dni?dni=${parameters.dni}`;
 
       try {
@@ -51,7 +54,7 @@ export const validarDni = tool({
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
-         console.info(`[${timestamp()}] - From:[${callId}] DNI ${parameters.dni} `, data);
+         console.info(`[${timestamp(context?.context as CallCtx)}] - From:[${callId}] DNI ${parameters.dni} `, data);
 
          return { success: true, data, dni_consultado: parameters.dni };
       } catch (error: any) {
@@ -68,8 +71,8 @@ export const hrf_buscar_servicios_y_centros = tool({
    parameters: z.object({
       IdProfesional: z.number().describe("ID del profesional a consultar."),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_buscar_servicios_y_centros:`, parameters);
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] hrf_buscar_servicios_y_centros:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/obtener-servicios-centros?IdProfesional=${parameters.IdProfesional}`;
 
       try {
@@ -97,8 +100,8 @@ export const hrf_obtener_centros_para_el_servicio = tool({
       IdServicio: z.number(),
       IdPrestacion: z.number(),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_obtener_centros_para_el_servicio:`, parameters);
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] hrf_obtener_centros_para_el_servicio:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/ObtenerCentroPorServiciosPrestacion?IdServicio=${parameters.IdServicio}&IdPrestacion=${parameters.IdPrestacion}`;
 
       try {
@@ -119,8 +122,8 @@ export const hrf_obtener_todos_los_centros_atencion = tool({
    name: "hrf_obtener_todos_los_centros_atencion",
    description: "Recupera todos los centros de atención disponibles en el Hospital Raúl Angel Ferreyra.",
    parameters: z.object({}),
-   execute: async () => {
-      console.log(`[${timestamp()}] hrf_obtener_todos_los_centros_atencion...`);
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] hrf_obtener_todos_los_centros_atencion...`);
 
       const url = `${process.env.BACKEND_URL}/turnos/obtener-centros-atencion`;
 
@@ -135,8 +138,18 @@ export const hrf_obtener_todos_los_centros_atencion = tool({
 
          const data = {
             Centros: [
-               { IdCentroAtencion: 19, NombreCentroAtencion: "Centro de Atención Raúl Angel Ferreyra" },
-               { IdCentroAtencion: 32, NombreCentroAtencion: "HRF Anexo Centro" }
+               {
+                  "Id": 19,
+                  "Nombre": "Hospital Raúl Ángel Ferreyra",
+                  "Direccion": "Av. Pablo Ricchieri 2200, Córdoba",
+                  "Telefono": "0351-4688888"
+               },
+               {
+                  "Id": 32,
+                  "Nombre": "HRF Anexo Centro",
+                  "Direccion": "Santa Rosa 770, Córdoba",
+                  "Telefono": "0351-4688888"
+               },
             ]
          };
 
@@ -158,8 +171,8 @@ export const hrf_buscar_prestaciones = tool({
       IdCentroAtencion: z.number().describe("ID del centro de atención a consultar."),
       IdServicio: z.number().describe("ID del servicio a consultar."),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_buscar_prestaciones:`, parameters);
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] hrf_buscar_prestaciones:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/obtener-prestaciones`;
 
       const options = {
@@ -229,7 +242,7 @@ export const asignar_turno = tool({
   }),
   execute: async (parameters, context) => {
    const callId = (context?.context as CallCtx)?.callId || "unknown";
-    console.log(`[${timestamp()}] ${callId} => asignar_turno:`, parameters);
+    console.log(`[${timestamp(context?.context as CallCtx)}] ${callId} => asignar_turno:`, parameters);
     const url = `${process.env.BACKEND_URL}/turnos/asignar`;
 
     try {
@@ -287,7 +300,7 @@ export const hrf_obtener_mis_proximos_turnos = tool({
    }),
    execute: async (parameters, context) => {
       const callId = (context?.context as CallCtx)?.callId || "unknown";
-      console.log(`[${timestamp()}] ${callId} => hrf_obtener_mis_proximos_turnos:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] ${callId} => hrf_obtener_mis_proximos_turnos:`, parameters);
 
       const url = `${process.env.BACKEND_URL}/turnos/mis-turnos`;
 
@@ -323,7 +336,7 @@ export const anular_turno = tool({
    }),
    execute: async (parameters, context) => {
       const callId = (context?.context as CallCtx)?.callId || "unknown";
-      console.log(`[${timestamp()}] ${callId} => anular_turno:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] ${callId} => anular_turno:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/anular_turno`;
 
       const options = {
@@ -358,8 +371,8 @@ export const hrf_buscar_servicios = tool({
    parameters: z.object({
       consulta: z.string().describe("Texto con la consulta del usuario."),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_buscar_servicios:`, parameters);
+   execute: async (parameters, context) => {
+      console.log(`[${timestamp(context?.context as CallCtx)}] hrf_buscar_servicios:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/buscar_servicio?inputText=${parameters.consulta}`;
 
       try {
@@ -384,8 +397,8 @@ Devuelve los profesionales con los nombres más similares al valor pasado como p
       nombreProfesional: z.string().describe("Nombre completo o parcial del profesional a buscar."),
       servicio: z.string().optional().describe("Nombre del servicio en el que atiende el profesional. Opcional."),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_buscar_profesional:`, parameters);
+   execute: async (parameters, context) => {
+      console.log(`[${timestamp(context?.context as CallCtx)}] hrf_buscar_profesional:`, parameters);
       const input = parameters.servicio 
          ? `Profesional: ${parameters.nombreProfesional} Servicio: ${parameters.servicio}` 
          : `Profesional: ${parameters.nombreProfesional}`;
@@ -425,7 +438,7 @@ export const buscar_turnos = tool({
    }),
    execute: async (parameters, context) => {
       const callId = (context?.context as CallCtx)?.callId || "unknown";
-      console.log(`[${timestamp()}] ${callId} => buscar_turnos:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] ${callId} => buscar_turnos:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/obtener_primeros_turnos_disponibles`;
 
       if (parameters.IdCobertura === 0) return { success: false, error: "El IdCobertura no puede ser 0!" }
@@ -440,9 +453,9 @@ export const buscar_turnos = tool({
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
          if (data?.Turnos && data.Turnos?.length > 0) {
-            console.log(`[${timestamp()}] Turnos para ${parameters.IdPersona} `, data.Turnos.length);
+            console.log(`[${timestamp(context?.context as CallCtx)}] Turnos para ${parameters.IdPersona} `, data.Turnos.length);
          } else {
-            console.log(`[${timestamp()}] No se encontraron turnos disponibles para ${parameters.IdPersona}.`);
+            console.log(`[${timestamp(context?.context as CallCtx)}] No se encontraron turnos disponibles para ${parameters.IdPersona}.`);
          }
 
 
@@ -460,7 +473,7 @@ export const hrf_fecha_hora_argentina = tool({
    description:
       "Devuelve la fecha y hora actual de Argentina (UTC-3) en formato yyyy-MM-dd HH:mm:ss.",
    parameters: z.object({}),
-   execute: async () => {
+   execute: async (parameters, context) => {
       try {
          const date = new Date();
 
@@ -486,7 +499,7 @@ export const hrf_fecha_hora_argentina = tool({
 
          //const fechaHoraArgentina = '2025-12-05 21:30:00'; // Hardcodeado para pruebas
 
-         console.log(`[${timestamp()}] hrf_fecha_hora_argentina ejecutada → ${fechaHoraArgentina}`);
+         console.log(`[${timestamp(context?.context as CallCtx)}] hrf_fecha_hora_argentina ejecutada → ${fechaHoraArgentina}`);
 
          return {
             success: true,
@@ -505,11 +518,12 @@ export const hrf_fecha_hora_argentina = tool({
    },
 });
 
+
 export const hrf_informacion_general = tool({
    name: "hrf_informacion_general",
    description: "Proporciona información general sobre el Hospital Raúl Angel Ferreyra, como ubicación, horarios de atención y servicios ofrecidos.",
    parameters: z.object({}),
-   execute: async () => {
+   execute: async (parameters, context) => {
       const info = `
          BASE DE CONOCIMIENTO - HOSPITAL RAÚL ÁNGEL FERREYRA
 
@@ -572,8 +586,8 @@ export const hrf_buscar_por_subespecialidad = tool({
    parameters: z.object({
       subespecialidad: z.string().describe("Nombre de la subespecialidad médica a consultar."),
    }),
-   execute: async (parameters) => {
-      console.log(`[${timestamp()}] hrf_buscar_por_subespecialidad:`, parameters);
+   execute: async (parameters, context) => {
+      console.log(`[${timestamp(context?.context as CallCtx)}] hrf_buscar_por_subespecialidad:`, parameters);
 
       const url = `${process.env.BACKEND_URL}/buscar_profesionales_subespecialidad_hrf?subespecialidad=${parameters.subespecialidad}`;   
       
@@ -635,7 +649,7 @@ export const hrf_buscar_horarios_profesional = tool({
       IdProfesional: z.number().describe("ID del profesional a consultar."),
    }),
    execute: async (parameters, context) => {
-      console.log(`[${timestamp()}] hrf_buscar_horarios_profesional:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] hrf_buscar_horarios_profesional:`, parameters);
       const callId = (context?.context as CallCtx)?.callId || "desconocido";
       const url = `${process.env.BACKEND_URL}/turnos/recuperar_horarios_atencion?IdProfesional=${parameters.IdProfesional}`;
       try {
@@ -673,4 +687,329 @@ export const hrf_buscar_horarios_profesional = tool({
          return { success: false, error: error.message };
       }
    },
+});
+
+// ---------------- COLGAR LLAMADA ----------------
+export const colgar_llamada = tool({
+   name: "colgar_llamada",
+   description: `finaliza la llamada actual (hangup). Usar cuando la conversación ha terminado o el usuario lo solicita. 
+Preamble sample phrases
+*IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
+- Voy a colgar la llamada, que tengas un buen día.
+- Finalizo la llamada, gracias por comunicarte con el Hospital Privado de Córdoba.
+- Voy a finalizar la llamada, que tengas un buen día.
+ `,
+   parameters: z.object({
+      reason: z.string().optional().describe("Motivo del corte (opcional)."),
+   }),
+   execute: async (_args, ctx) => {
+      // Retornar una promesa que se resuelve después del timeout
+      return new Promise((resolve) => {
+         setTimeout(async () => {
+            const callId = (ctx?.context as CallCtx)?.callId;
+            if (!callId) {
+               resolve({
+                  success: false,
+                  error: "No hay callId disponible en el contexto.",
+               });
+               return;
+            }
+
+            const url = `https://api.openai.com/v1/realtime/calls/${encodeURIComponent(callId)}/hangup`;
+
+            try {
+               const res = await fetch(url, {
+                  method: "POST",
+                  headers: {
+                     Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                  },
+               });
+
+               if (!res.ok) {
+                  const text = await res.text();
+                  resolve({
+                     success: false,
+                     error: `Error al colgar (${res.status}): ${text}`,
+                  });
+                  return;
+               }
+
+               console.log(`Llamada ${callId} finalizada correctamente.`);
+               resolve({
+                  success: true,
+                  message: "Llamada finalizada correctamente.",
+               });
+            } catch (error: any) {
+               console.error("Error al colgar la llamada:", error);
+               resolve({
+                  success: false,
+                  error: error.message,
+               });
+            }
+         }, 5000); // Espera 5 segundos antes de cortar
+      });
+   },
+});
+
+// ---------------- TRANSFERIR LLAMADA ----------------
+export const transferir_llamada = tool({
+   name: "transferir_llamada",
+   description: `Transfiere la llamada actual a un destino SIP configurado en el entorno.
+Usar esta herramienta cuando el usuario solicita hablar con un operador humano o cuando se requiere derivar la llamada.`,
+   parameters: z.object({
+      motivo: z.string().describe("Motivo por el cual se transfiere la llamada."),
+   }), // sin parámetros
+   execute: async (parameters, ctx) => {
+      const callId = (ctx?.context as CallCtx)?.callId;
+      if (!callId) {
+         return {
+            success: false,
+            error: "No hay callId disponible en el contexto de la llamada.",
+         };
+      };
+
+      const feriados = [
+         "2026-04-02", // Jueves Santo
+         "2026-04-03", // Viernes Santo
+      ]
+
+      const now = new Date();
+      const hoy = now.toISOString().split("T")[0];
+      const esFeriado = hoy ? feriados.includes(hoy) : false;
+
+      if (esFeriado) {
+         return {
+            success: false,
+            message: "No es posible derivar la llamada hoy porque es un día feriado.",
+         };
+      }
+
+      if (!estaEnHorarioAtencion()) {
+         return {
+            success: false,
+            message: "No es posible derivar la llamada fuera del horario de atención.",
+         };
+      };
+
+      const targetUri = process.env.SIP_TRANSFER_TARGET;
+      if (!targetUri) {
+         return {
+            success: false,
+            message:
+               "No es posible derivar la llamada en este momento. El destino de transferencia no está configurado.",
+         };
+      }
+
+      const baseUrl = `https://api.openai.com/v1/realtime/calls/${encodeURIComponent(callId)}`;
+      const headers = {
+         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+         "Content-Type": "application/json",
+      };
+
+      console.info(`👉 Motivo de la transferencia ${callId}: ${parameters.motivo}`);
+
+      try {
+         // ⏳ Esperar 5 segundos antes de transferir
+         await new Promise((resolve) => setTimeout(resolve, 5000));
+
+         // 1️⃣ Enviar la solicitud de transferencia (REFER)
+         const referRes = await fetch(`${baseUrl}/refer`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ target_uri: targetUri }),
+         });
+
+         if (!referRes.ok) {
+            const text = await referRes.text();
+            return {
+               success: false,
+               message: `No se pudo derivar la llamada (HTTP ${referRes.status}).`,
+               error: text,
+            };
+         }
+
+         console.log(`✅ Llamada derivada correctamente a ${targetUri}`);
+
+         // 2️⃣ Intentar finalizar la llamada en OpenAI (sin interrumpir si falla)
+         try {
+            setTimeout(async () => {
+               const hangupRes = await fetch(`${baseUrl}/hangup`, {
+                  method: "POST",
+                  headers,
+               });
+
+               if (!hangupRes.ok) {
+                  const text = await hangupRes.text();
+                  console.warn(
+                     `⚠️ No se pudo finalizar la llamada (HTTP ${hangupRes.status}).`,
+                     text
+                  );
+               } else {
+                  console.log(`📞 Llamada finalizada localmente tras la transferencia.`);
+               }
+            }, 1500);
+         } catch (hangupError) {
+            console.warn("⚠️ Error al intentar colgar la llamada:", hangupError);
+         }
+
+         return {
+            success: true,
+            message: `Llamada derivada correctamente a ${targetUri}. *No es necesario que hables para indicarle al usuario*.`,
+         };
+      } catch (error: any) {
+         console.error("❌ Error al transferir la llamada:", error);
+         return {
+            success: false,
+            message: "Error al intentar derivar la llamada.",
+            error: error.message,
+         };
+      }
+   },
+});
+
+export const obtener_dias_feriados = tool({
+   name: "obtener_dias_feriados",
+   description: "Devuelve una lista de los próximos días feriados en Argentina, incluyendo su fecha y nombre. Útil para evitar ofrecer derivar a asistentes humanos en esos días.",
+   parameters: z.object({}),
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] obtener_dias_feriados ejecutada`);
+      // TODO: harcodear con las fecha 2 y 3 de abril de 2026
+      const hardcode_data = [
+         { fecha: "2026-04-02", nombre: "Jueves Santo" },
+         { fecha: "2026-04-03", nombre: "Viernes Santo" },
+      ];
+      return { success: true, data: hardcode_data };
+   }
+});
+
+// ---------------- RECUPERAR SERVICIOS Y PRESTACIONES DE UN PROFESIONAL ----------------
+export const hrf_recuperar_servicios_y_prestaciones = tool({
+   name: "hrf_recuperar_servicios_y_prestaciones",
+   description: `Utiliza esta herramienta para obtener la lista de servicios y prestaciones que ofrece el profesional en el Hospital Privado de Córdoba. Esta información es útil para conocer las opciones disponibles y poder ofrecer turnos adecuados a los pacientes.`,
+   parameters: z.object({
+      IdProfesional: z.number().describe("ID del profesional a consultar."),
+   }),
+   execute: async (parameters, context) => {
+
+      console.log(`[${timestamp(context?.context as CallCtx)}] hrf_recuperar_servicios_y_prestaciones:`, parameters);
+
+      try {
+         let centros = await recuperarCentrosServiciosDelProfesional(parameters.IdProfesional);
+
+         if (centros.length === 0) {
+            console.log("El profesional no tiene centros de atencion asociados.");
+            return { success: true, data: [], message: "El profesional no tiene centros de atención asociados." };;
+         }
+
+         centros = Array.isArray(centros) ? centros : [centros]; // Asegurar que es un array
+
+         const prestacionesDisponibles = (
+            await Promise.all(
+               centros.map(async (centro) => {
+                  try {
+                     const prestaciones = await recuperarServiciosYPrestacionesDelProfesionalEnCentro(
+                        centro.IdProfesional,
+                        centro.IdCentroAtencion,
+                        centro.IdServicio
+                     );
+
+                     return prestaciones.map((prestacion: any) => ({
+                        idProfesional: centro.IdProfesional,
+                        IdCentroAtencion: centro.IdCentroAtencion,
+                        NombreCentroAtencion: centro.NombreCentroAtencion,
+                        IdServicio: centro.IdServicio,
+                        NombreServicio: centro.NombreServicio,
+                        IdPrestacion: prestacion.IdPrestacion,
+                        Prestacion: prestacion.NombrePrestacion
+                     }));
+                  } catch (error) {
+                     console.warn(
+                        `No se pudieron recuperar prestaciones para IdProfesional=${centro?.IdProfesional}, IdCentroAtencion=${centro?.IdCentroAtencion}, IdServicio=${centro?.IdServicio}`,
+                        error
+                     );
+                     return [];
+                  }
+               })
+            )
+         ).flat();
+         let instrucciones = `
+         # Instrucciones para continuar con la busqueda de turnos
+         1. Si el usuario no indico centro de atencion y el profesional atiende en varios centros, buscar turnos sin IdCentroAtencion.
+         2. Si el usuario no indico prestacion especifica, buscar turnos con el IdPrestacion *consulta* si esta disponible.
+         3. Si el profesional ofrece varios *servicios*, preguntar al usuario por cual servicio quiere turno.
+         4. No ofrezcas opciones si no es necesario. Debes ser lo mas proactivo posible para buscar turnos.
+         `;
+
+         return { success: true, data: prestacionesDisponibles, instrucciones };
+      } catch (error) {
+         console.error("Error al buscar servicios y centros del profesional:", error);
+         return { success: false, error: (error as Error).message };
+      }
+
+   }
+});
+
+export const recuperarCentrosServiciosDelProfesional: (IdProfesional: number) => Promise<CentrosServiciosDelProfesional[]> = async (IdProfesional: number) => {
+   const url = `${process.env.BACKEND_URL}/turnos/obtener-servicios-centros?IdProfesional=${IdProfesional}`;
+   try {
+      const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json().catch(async () => ({ result: await response.text() }));
+
+      const lista = Array.isArray(data?.ListaCentroAtencionServicio)
+         ? data.ListaCentroAtencionServicio
+         : [];
+
+      const centros_servicios = lista.map((item: any) => ({
+         IdCentroAtencion: item.IdCentroAtencion,
+         IdProfesional: item.IdRecurso,
+         IdServicio: item.IdServicio,
+         NombreCentroAtencion: item.NombreCentroAtencion,
+         NombreProfesional: item.NombreRecurso,
+         NombreServicio: item.NombreServicio,
+      }));
+
+      return centros_servicios;
+
+   } catch (error) {
+      console.error("Error al recuperar centros del profesional:", error);
+      throw error;
+   }
+};
+
+export const recuperarServiciosYPrestacionesDelProfesionalEnCentro: (IdProfesional: number, IdCentroAtencion: number, IdServicio: number) => Promise<CentrosServiciosPrestacionesDelProfesional[]> = async (IdProfesional: number, IdCentroAtencion: number, IdServicio: number) => {
+   const url = `${process.env.BACKEND_URL}/turnos/obtener-prestaciones`;
+   try {
+      const response = await fetch(url, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ IdProfesional, IdCentroAtencion, IdServicio }),
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json().catch(async () => ({ result: await response.text() }));
+      return data.Prestaciones;
+   } catch (error) {
+      console.error("Error al recuperar servicios y prestaciones del profesional en centro:", error);
+      throw error;
+   }
+};
+
+
+
+export const wait_for_user = tool({
+  name: "wait_for_user",
+
+  description:
+    "Call this when the latest audio does not need a spoken response, such as silence, background noise, hold music, TV audio, side conversation, or speech not addressed to the assistant. This tool helps end the turn without a spoken reply.",
+
+  parameters: z.object({}),
+
+  execute: async (_args, _ctx) => {
+    // No-op intentionally.
+    // The model should call this tool to stay silent and keep listening.
+    return {
+      ok: true,
+      action: "wait",
+    };
+  },
 });
