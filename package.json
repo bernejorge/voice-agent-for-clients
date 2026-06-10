@@ -21,12 +21,14 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@openai/agents": "^0.11.4",
-    "@openai/agents-extensions": "^0.11.4",
+    "@openai/agents": "^0.11.6",
+    "@openai/agents-core": "^0.11.6",
+    "@openai/agents-extensions": "^0.11.6",
+    "@openai/agents-realtime": "^0.11.6",
     "dotenv": "^17.3.1",
     "fastify": "^5.8.1",
     "fastify-raw-body": "^5.0.0",
-    "openai": "^6.27.0",
+    "openai": "^6.42.0",
     "zod": "^4.3.6"
   }
 }

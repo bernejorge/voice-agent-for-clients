@@ -82,6 +82,7 @@ export class SilenceHandler extends AbstractSessionHandler{
       }
       this.silenceTimeout = setTimeout(() => {
          this.stopSilenceTimer();
+         console.log("SILENCE TIMER EXPIRED");
          this.session.sendMessage("Se ha detectado un silencio prolongado. Informar al usuario de la situacion");
          this.silenceCounter++;
 

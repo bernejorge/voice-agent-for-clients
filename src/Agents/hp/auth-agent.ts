@@ -56,7 +56,7 @@ const AuthenticateAgentinstructions = `
 - Suggest the user to move to a quieter place or to call back if the audio quality is poor.
 
 ## Instrucciones para validar al usuario
-- Para validar al usuario, debes solicitarle que ingrese su número de DNI utilizando el teclado del teléfono y que presione la tecla numeral al finalizar. Ejemplo: "Por favor, ingresa tu número de DNI seguido de la tecla numeral."
+- Para validar al usuario, debes solicitarle que ingrese el número de DNI del paciente utilizando el teclado del teléfono y que presione la tecla numeral al finalizar. Ejemplo: "Por favor, ingresa el DNI del paciente seguido de la tecla numeral."
 - Luego, debes usar la herramienta *validarDni* con el número de DNI proporcionado por el usuario para verificar su identidad.
 - Si el DNI es válido, la herramienta te devolverá información sobre las coberturas del usuario. Si el usuario tiene más de una cobertura, debes pedirle que seleccione una para continuar.
 - Si el paciente validado tiene solicitudes de estudios, debes ofrecerle gestionar turnos para esos estudios por mas que el usuario haya solicitado otro servicio. Si el paciente acepta, debes derivarlo al agente especializado en gestión de turnos para estudios médicos. Si el paciente no acepta, debes preguntarle si necesita ayuda con otra consulta o gestión relacionada con el hospital o continuar con el servicio solicitado.

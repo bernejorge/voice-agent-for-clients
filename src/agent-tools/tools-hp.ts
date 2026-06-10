@@ -45,19 +45,32 @@ Preamble sample phrases:
 - Voy a verificar si el dni esta empadronado.
 - Un momento por favor, estoy validando el dni del paciente.`,
    parameters: z.object({
-      dni: z.string().describe("Número de DNI o documento del usuario a validar."),
+      dni: z.number().describe("Número de DNI o documento del usuario a validar."),
    }),
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] Validando DNI ${parameters.dni}...`);
       const url = `${process.env.BACKEND_URL}/turnoshp/validar-dni?dni=${parameters.dni}`;
 
       try {
+
+         if (!parameters.dni) return { success: false, error: "El número de DNI es requerido para validar al paciente." };
+         if (parameters.dni < 1_000_000 || parameters.dni > 99_999_999) 
+            return { 
+               success: false, 
+               error: "El número de DNI ingresado no es válido. Debe tener entre 7 y 8 dígitos.",
+               instrucciones: `
+               DNI ingresado: ${parameters.dni.toString().split("").join("-")}
+               Lee el numero de DNI ingresado digito por digito y pedile que lo ingrese nuevamente.
+               `
+            };
+
          const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
          let instrucciones = `
+         DNI ingresado: ${parameters.dni.toString().split("").join("-")}
           # Intrucciones para el manejo de errores.
           - Diferenciar de errores tecnicos o errores porque el dni no figura empadronado en el sistema
           
@@ -1552,7 +1565,7 @@ Si no se indicó idCentroAtencion, significa que se buscó en todos los centros.
             instrucciones = `
 # Instrucciones para gestionar la respuesta al usuario:
 - Agrupar los turnos por centro y fecha.
-- Informar fecha, hora, centro de atención y profesional/recurso si está disponible.
+- Informar fecha, hora, centro de atención. (*NO INFORMES EL RECURSO*, ya que se refiere al equipo o aparato disponible, no a un profesional, y puede confundir al usuario).
 - Luego de que el usuario elija un turno, informale el detalle completo del turno elegido.
 - Preguntale si quiere confirmar ese turno antes de asignarlo.
 `;

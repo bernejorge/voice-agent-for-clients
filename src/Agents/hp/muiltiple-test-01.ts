@@ -1,5 +1,5 @@
 import { RealtimeAgent } from '@openai/agents/realtime';
-import { RECOMMENDED_PROMPT_PREFIX, SHARED_INSTRUCTIONS } from './../../utils/shared-prompt.js'
+import { RECOMMENDED_PROMPT_PREFIX_ESP, SHARED_INSTRUCTIONS } from './../../utils/shared-prompt.js'
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 //import { promptWithHandoffInstructions } from '@openai/agents-core/extensions';
 import type { AgentInterface } from './../agent-interface.js';
@@ -38,10 +38,10 @@ export class multiagenteTest01 implements AgentInterface {
       cancelAgent.handoffs = [turnoAgent, authAgent, multiplesTurnosAgent];
       multiplesTurnosAgent.handoffs = [authAgent, cancelAgent];
 
-      authAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
-      turnoAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + turnoAgent.instructions + "\n" + this.instruccionesCompartidas;
-      cancelAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + cancelAgent.instructions + "\n" + this.instruccionesCompartidas;
-      multiplesTurnosAgent.instructions = RECOMMENDED_PROMPT_PREFIX + "\n" + multiplesTurnosAgent.instructions + "\n" + this.instruccionesCompartidas;
+      authAgent.instructions = RECOMMENDED_PROMPT_PREFIX_ESP + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
+      turnoAgent.instructions = RECOMMENDED_PROMPT_PREFIX_ESP + "\n" + turnoAgent.instructions + "\n" + this.instruccionesCompartidas;
+      cancelAgent.instructions = RECOMMENDED_PROMPT_PREFIX_ESP + "\n" + cancelAgent.instructions + "\n" + this.instruccionesCompartidas;
+      multiplesTurnosAgent.instructions = RECOMMENDED_PROMPT_PREFIX_ESP + "\n" + multiplesTurnosAgent.instructions + "\n" + this.instruccionesCompartidas;
 
       return authAgent;
    }

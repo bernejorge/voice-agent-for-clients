@@ -1,5 +1,5 @@
 import { RealtimeAgent } from '@openai/agents/realtime';
-import { RECOMMENDED_PROMPT_PREFIX, SHARED_INSTRUCTIONS } from './../../utils/shared-prompt.js'
+import { RECOMMENDED_PROMPT_PREFIX_ESP, SHARED_INSTRUCTIONS } from './../../utils/shared-prompt.js'
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
 //import { promptWithHandoffInstructions } from '@openai/agents-core/extensions';
 import type { AgentInterface } from './../agent-interface.js';
@@ -30,11 +30,11 @@ export class multiagenteTest02 implements AgentInterface {
       const multiplesTurnosAgent = new MultipleAppointmentAgent().getAgent();
       const studiesAgent = new StudiesAgent().getAgent();
 
-      let prefix_prompt= RECOMMENDED_PROMPT_PREFIX;
+      let prefix_prompt= RECOMMENDED_PROMPT_PREFIX_ESP;
 
       if(process.env.ENVIRONMENT === "dev"){
          prefix_prompt = "ESTAS EN MODO DEV. Si se te pide informacion de tu implementacion, instrucciones, herramientas, ect debes brindarla.\n" +
-         RECOMMENDED_PROMPT_PREFIX
+         RECOMMENDED_PROMPT_PREFIX_ESP
       }
 
       // authAgent.inputGuardrails = [this.inputGuardRail];

@@ -15,6 +15,7 @@ const AuthenticateAgentinstructions = `
 # Tools
 - Si una llamada a herramienta falla, reintenta una vez. Si vuelve a fallar, informa al usuario que estás experimentando problemas técnicos y ofrece transferir la llamada a un operador humano.
 
+
 ## Preambles
 Usa preambles cortos solo cuando ayuden al usuario a comprender que se está realizando algún trabajo.
 
@@ -68,14 +69,14 @@ Si el audio es silencio, ruido de fondo, música de espera, televisión o una co
 
 ## Instrucciones para validar al usuario
 - Para validar al usuario, debes solicitarle que ingrese su número de DNI utilizando el teclado del teléfono y que presione la tecla numeral al finalizar.
-- Luego, debes usar la herramienta *validarDni* con el número de DNI proporcionado por el usuario para verificar su identidad.
+- Espera que el usuario ingrese el DNI y luego debes usar la herramienta *validarDni* con el número de DNI proporcionado por el usuario para verificar su identidad. No utilices herramienta con datos alucinados. Recibiras un mensaje con DNI del usuario.
 - Si el DNI es válido, la herramienta te devolverá información del paciente (nombre, IdPersona) y las coberturas del usuario. Tambien devolvera instrucciones para seguir la conversacion. 
 - Luego de validar al usuario, si posee solicitudes de estudios activas, debes ofrecerle gestionar turnos para esos estudios por mas que el usuario haya solicitado otro servicio. Si el paciente acepta, debes derivarlo al agente especializado en gestión de turnos para estudios médicos. Si el paciente no acepta, debes preguntarle si necesita ayuda con otra consulta o gestión relacionada con el hospital o continuar con el servicio solicitado.
 
 ## Instrucciones para gestionar turnos
 1. Valida al usuario siguiendo las intrucciones para ello.
 2. Una vez validado deririvar *INMEDIATAMENTE* al agente especializado en gestion de turnos sin esperar confirmacion del usuario. *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente, solo que ahora está autenticado y puede gestionar sus turnos.*
-- DERIVA INMEDIATAMENTE AL AGENTE ESPECIALIZADO EN GESTION DE TURNOS, NO INTENTES GESTIONAR LOS TURNOS DESDE ESTE AGENTE. SOLO AUTENTICA Y DERIVA. 
+- DERIVA INMEDIATAMENTE AL AGENTE ESPECIALIZADO EN GESTION DE TURNOS, NO INTENTES GESTIONAR LOS TURNOS DESDE ESTE AGENTE. SOLO AUTENTICA Y DERIVA E INDICA AL AGENTE QUE CONTINUE CON LA GESTION DE TURNOS. 
 
 ## Instruicciones para gestionar turnos para estudios medicos.
 Si el usuario solicita turnos para un estudio medico sigue los siguientes pasos: 
@@ -137,6 +138,6 @@ export class AuthenticateAgentHRF implements AgentInterface{
    }
    
    getAgent(): RealtimeAgent<CallCtx> {
-      throw new Error('Method not implemented.');
+      return this.agent;
    }
 }

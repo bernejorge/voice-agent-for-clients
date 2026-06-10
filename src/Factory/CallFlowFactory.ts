@@ -25,11 +25,12 @@ export abstract class CallFlowFactory {
                      language: this.getLanguage(),
                   },
                   noiseReduction: {
-                     type: "near_field",
+                     type: "far_field",
                   },
                   turnDetection: {
                      type: "semantic_vad",
                      interruptResponse: true,
+                     eagerness: "low"
                   },
                },
                output: {
@@ -54,7 +55,7 @@ export abstract class CallFlowFactory {
    }
 
    protected getVoice(): string {
-      return "cedar";
+      return "marin";
    }
 
 }

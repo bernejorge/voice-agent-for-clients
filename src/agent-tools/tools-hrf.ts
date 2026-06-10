@@ -40,7 +40,7 @@ export const validarDni = tool({
       "Valida que el número de DNI o documento del usuario se encuentre empadronado en el sistema. Devuelve el IdPersona y las coberturas (cons sus IdCobertura) disponibles del usuario. "  +
       "Antes de llamar a esta herramienta di al usuario: 'Un momneto voy a validar el DNI en el sistema.'",
    parameters: z.object({
-      dni: z.string().describe("Número de DNI o documento del usuario a validar. Es un numero sin puntos de 7 u 8 digitos."),
+      dni: z.number().describe("Número de DNI o documento del usuario a validar. Es un numero sin puntos de 7 u 8 digitos."),
    }),
    execute: async (parameters, context) => {
       const from = (context?.context as CallCtx)?.phoneNumber?.split(" ")[0];
@@ -49,6 +49,9 @@ export const validarDni = tool({
       const url = `${process.env.BACKEND_URL}/turnos/validar-dni?dni=${parameters.dni}`;
 
       try {
+         if (!parameters.dni) return { success: false, error: "El número de DNI es requerido para validar al paciente." };
+         if (parameters.dni < 1_000_000 || parameters.dni > 99_999_999) return { success: false, error: "El número de DNI ingresado no es válido. Debe tener entre 7 y 8 dígitos." };
+
          const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -1007,6 +1010,7 @@ export const wait_for_user = tool({
   execute: async (_args, _ctx) => {
     // No-op intentionally.
     // The model should call this tool to stay silent and keep listening.
+    console.log("wait_for_user called - assistant will stay silent and keep listening.");
     return {
       ok: true,
       action: "wait",

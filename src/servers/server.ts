@@ -84,78 +84,94 @@ export class Server {
     activeCallTasks: Map<string, Promise<void>>,
   ): Promise<void> {
     fastify.post('/webhook', async (request, reply) => {
-      const rawBody = (request as unknown as { rawBody?: string | Buffer }).rawBody;
-      const payload =
-        typeof rawBody === 'string' ? rawBody : rawBody?.toString('utf8');
-
-      if (!payload) {
-        reply.status(400).send({
-          error: 'Missing raw body for webhook verification.',
-        });
-        return;
-      }
-
-      let event: Awaited<ReturnType<typeof this.openai.webhooks.unwrap>>;
-
       try {
-        event = await this.openai.webhooks.unwrap(payload, request.headers);
-      } catch (error) {
-        if (error instanceof InvalidWebhookSignatureError) {
-          console.warn('Invalid webhook signature.');
-          reply.status(400).send({ error: 'Invalid webhook signature.' });
+        const rawBody = (request as unknown as { rawBody?: string | Buffer }).rawBody;
+        const payload =
+          typeof rawBody === 'string' ? rawBody : rawBody?.toString('utf8');
+
+        if (!payload) {
+          reply.status(400).send({
+            error: 'Missing raw body for webhook verification.',
+          });
           return;
         }
 
-        console.error('Failed to parse webhook payload.', error);
-        reply.status(500).send({ error: 'Failed to parse webhook payload.' });
-        return;
-      }
-
-      if (event.type === 'realtime.call.incoming') {
-        const callId = event.data.call_id;
-
-        const phoneNumber =
-          event.data?.sip_headers?.find(
-            (hdr) => hdr.name.toLowerCase() === 'from',
-          )?.value || 'unknown';
-
-        if (!callId) {
-          console.error('Test incoming call webhook.');
-          reply.status(200).send({ ok: true });
-          return;
-        }
-
-        const agent = this.factory.createAgent();
+        let event: Awaited<ReturnType<typeof this.openai.webhooks.unwrap>>;
 
         try {
-          await this.acceptCall(callId, agent);
+          event = await this.openai.webhooks.unwrap(payload, request.headers);
         } catch (error) {
-          console.error(`Failed to accept call ${callId}:`, error);
-          reply.status(500).send({ error: 'Failed to accept call.' });
+          if (error instanceof InvalidWebhookSignatureError) {
+            console.warn('Invalid webhook signature.');
+            reply.status(400).send({ error: 'Invalid webhook signature.' });
+            return;
+          }
+
+          console.error('Failed to parse webhook payload.', error);
+          reply.status(500).send({ error: 'Failed to parse webhook payload.' });
           return;
         }
 
-        if (!activeCallTasks.has(callId)) {
-          const task = this.observeCall(callId, agent, undefined, phoneNumber)
-            .catch((error) => {
-              console.error(
-                `Unhandled error while observing call ${callId}:`,
-                error,
-              );
-            })
-            .finally(() => {
-              activeCallTasks.delete(callId);
-            });
+        if (event.type === 'realtime.call.incoming') {
+          const callId = event.data.call_id;
 
-          activeCallTasks.set(callId, task);
-        } else {
-          console.info(
-            `Call ${callId} already being observed; skipping duplicate webhook.`,
-          );
+          const phoneNumber =
+            event.data?.sip_headers?.find(
+              (hdr) => hdr.name.toLowerCase() === 'from',
+            )?.value || 'unknown';
+
+          console.info(`Incoming call ${callId} from ${phoneNumber}`);
+
+          if (!callId) {
+            console.error('Test incoming call webhook.');
+            reply.status(200).send({ ok: true });
+            return;
+          }
+
+          let agent: any;
+          try {
+            agent = this.factory.createAgent();
+          } catch (error) {
+            console.error(`Failed to create agent for call ${callId}:`, error);
+            reply.status(500).send({ error: 'Failed to create agent.' });
+            return;
+          }
+
+          try {
+            await this.acceptCall(callId, agent);
+          } catch (error) {
+            console.error(`Failed to accept call ${callId}:`, error);
+            reply.status(500).send({ error: 'Failed to accept call.' });
+            return;
+          }
+
+          if (!activeCallTasks.has(callId)) {
+            const task = this.observeCall(callId, agent, undefined, phoneNumber)
+              .catch((error) => {
+                console.error(
+                  `Unhandled error while observing call ${callId}:`,
+                  error,
+                );
+              })
+              .finally(() => {
+                activeCallTasks.delete(callId);
+              });
+
+            activeCallTasks.set(callId, task);
+          } else {
+            console.info(
+              `Call ${callId} already being observed; skipping duplicate webhook.`,
+            );
+          }
+        }
+
+        reply.status(200).send({ ok: true });
+      } catch (error) {
+        console.error('Unhandled error while processing /webhook:', error);
+        if (!reply.sent) {
+          reply.status(500).send({ error: 'Internal webhook processing error.' });
         }
       }
-
-      reply.status(200).send({ ok: true });
     });
 
     fastify.get('/', async () => ({ status: 'ok' }));
@@ -176,6 +192,7 @@ export class Server {
       console.info(
         `[${timestamp(sessionOptions.context as CallCtx)}] Accepted call ${callId}`,
       );
+      
     } catch (error) {
       if (error instanceof APIError && error.status === 404) {
         console.warn(
@@ -240,7 +257,7 @@ export class Server {
       session.transport.sendEvent({
         type: 'response.create',
         response: {
-          instructions: `Say exactly '${saludoInicial}' now before continuing the conversation.`,
+          instructions: `Di exactamente '${saludoInicial}' y espera el turno de usuario.`,
         },
       });
 
