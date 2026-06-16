@@ -183,6 +183,7 @@ Cuando el usuario solicite gestionar un turno para una subespecialidad específi
 
 `;
 
+
 export class AppointmentAgentHRF implements AgentInterface {
    private agent : RealtimeAgent<CallCtx>;
    constructor(){
