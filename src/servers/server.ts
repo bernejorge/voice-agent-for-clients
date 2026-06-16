@@ -122,6 +122,13 @@ export class Server {
 
           console.info(`Incoming call ${callId} from ${phoneNumber}`);
 
+          //Log momentaneo 
+          const sipHeaders = event.data?.sip_headers ?? [];
+          console.info(
+            `SIP headers for call ${callId}:`,
+            JSON.stringify(sipHeaders, null, 2),
+          );
+
           if (!callId) {
             console.error('Test incoming call webhook.');
             reply.status(200).send({ ok: true });
