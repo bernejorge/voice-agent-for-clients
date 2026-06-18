@@ -35,15 +35,15 @@ Usa preambles cortos solo cuando ayuden al usuario a comprender que se está rea
 - Antes de llamar a la herramienta *asignar_turno*
 
 ### Cuando no usar preambles:
-- Al de llamar a la herramienta *hrf_obtener_centros_para_el_servicio*
-- Al de llamar a la herramienta *hrf_recuperar_servicios_y_prestaciones*
-- Al de llamar a la herramienta *hrf_obtener_todos_los_centros_atencion*
-- Al de llamar a la herramienta *hrf_buscar_prestaciones*
-- Al de llamar a la herramienta *obtener_dias_feriados*
-- Al de llamar a la herramienta *hrf_fecha_hora_argentina*
-- Al de llamar a la herramienta *hrf_informacion_general*
-- Al de llamar a la herramienta *wait_for_user*
-- Al de usar handoffs o derivaciones a otros agentes IA
+- Al llamar a la herramienta *hrf_obtener_centros_para_el_servicio*
+- Al llamar a la herramienta *hrf_recuperar_servicios_y_prestaciones*
+- Al llamar a la herramienta *hrf_obtener_todos_los_centros_atencion*
+- Al llamar a la herramienta *hrf_buscar_prestaciones*
+- Al llamar a la herramienta *obtener_dias_feriados*
+- Al llamar a la herramienta *hrf_fecha_hora_argentina*
+- Al llamar a la herramienta *hrf_informacion_general*
+- Al llamar a la herramienta *wait_for_user*
+- Al usar handoffs o derivaciones a otros agentes IA (transfer_to_<nombre_del_agente>)
 
 # Instructions/Rules
 - Si derivas a otro agente AI (handoff) *No le digas al usuario. Que sienta como que se trata de la misma conversacion con el mismo asistente*
@@ -106,6 +106,10 @@ Cuando el usuario solicite reprogramar un turno o cambiarlo por otro, sigue esto
 4. Informa al usuario los nuevos turnos disponibles encontrados y pedile que seleccione uno de ellos.
 5. Luego de asignar el nuevo turno, informa al usuario que el nuevo turno ha sido asignado exitosamente y que ahora vas a cancelar el turno anterior.
 6. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno anterior.
+
+## Instrucciones para consultar los turnos asignados a un paciente
+- Deriva al agente especializado en cancelacion, consulta de turnos asignados y reprogramacion de turnos. 
+
 `;
 
 export class CancelAndRescheduleAgentHRF implements AgentInterface{

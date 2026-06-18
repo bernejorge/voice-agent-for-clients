@@ -59,6 +59,7 @@ export const validarDni = tool({
 
          console.info(`[${timestamp(context?.context as CallCtx)}] - From:[${callId}] DNI ${parameters.dni} `, data);
 
+
          return { success: true, data, dni_consultado: parameters.dni };
       } catch (error: any) {
          console.error("Error al validar DNI:", error.message);
@@ -997,7 +998,208 @@ export const recuperarServiciosYPrestacionesDelProfesionalEnCentro: (IdProfesion
    }
 };
 
+// ---------------- BUSCAR TURNOS PARA PRÁCTICAS ----------------
+export const hrf_buscar_turnos_para_practicas = tool({
+   name: "hrf_buscar_turnos_para_practicas",
+   description: `Busca los primeros turnos disponibles para prácticas o estudios médicos.
 
+Preamble sample phrases:
+*IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
+
+- Estoy buscando los turnos disponibles para la práctica, un momento...
+- Voy a consultar en el sistema los turnos disponibles para ese estudio.
+- Estoy verificando disponibilidad para la práctica médica indicada...
+`,
+   parameters: z.object({
+      IdSolicitudDeEstudio: z.string().optional().describe("Id de la solicitud de estudio si es que corresponde a una solicitud de estudio registrada."),
+      idCentroAtencion: z.number().optional().default(0),
+      idServicio: z.number(),
+      idPersona: z.number(),
+      idCobertura: z.number(),
+      idsPrestaciones: z.array(z.number()).optional().default([]),
+      fecha: z.string().nullable().optional().describe("Fecha a partir de la cual buscar turnos, en formato yyyy-MM-dd. Si no se indica, se buscará a partir de la fecha actual."),
+      
+      horaDesde: z.string().nullable().optional(),
+      horaHasta: z.string().nullable().optional(),
+   }),
+   execute: async (parameters, ctx) => {
+      console.log(
+         `[${timestamp(ctx?.context as CallCtx)}] hrf_buscar_turnos_para_practicas:`,
+         parameters
+      );
+
+      const url = `${process.env.BACKEND_URL}/turnos/obtener_primeros_turnos_disponibles_para_practicas`;
+
+      if (!parameters.idServicio) {
+         return {
+            success: false,
+            error: "El idServicio es requerido para buscar turnos para prácticas.",
+         };
+      }
+
+      if (!parameters.idPersona) {
+         return {
+            success: false,
+            error: "El idPersona es requerido para buscar turnos para prácticas.",
+         };
+      }
+
+      if (!parameters.idCobertura) {
+         return {
+            success: false,
+            error: "El idCobertura es requerido para buscar turnos para prácticas.",
+         };
+      }
+
+      if ( (!parameters.idsPrestaciones || parameters.idsPrestaciones.length === 0) ) {
+         return {
+            success: false,
+            error: "Al menos un idPrestacion es requerido para buscar turnos para prácticas.",
+         };
+      }
+
+      const body = {
+         IdSolicitudDeEstudio: parameters.IdSolicitudDeEstudio ?? "",
+         IdCentroAtencion: parameters.idCentroAtencion ?? 0,
+         IdServicio: parameters.idServicio,
+         IdPersona: parameters.idPersona,
+         IdCobertura: parameters.idCobertura,
+         IdsPrestaciones: parameters.idsPrestaciones ?? [],
+         fecha: parameters.fecha ?? "",
+         horaHasta: parameters.horaHasta ?? "",
+         horaDesde: parameters.horaDesde ?? "",
+         origen_solicitud: "voice-agent",
+         //diasSemana: parameters.DiasSemana ?? [],
+      };
+
+      try {
+         const response = await fetch(url, {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+         });
+
+         const raw = await response.text();
+
+         let data: any;
+         try {
+            data = raw ? JSON.parse(raw) : null;
+         } catch {
+            data = { result: raw };
+         }
+
+         if (!response.ok) {
+            const msg =
+               data?.Mensaje ??
+               data?.mensaje ??
+               data?.data?.Mensaje ??
+               data?.data?.mensaje ??
+               `HTTP ${response.status}`;
+
+            return {
+               success: false,
+               status: response.status,
+               error: msg,
+               data,
+            };
+         }
+
+         let instrucciones = "";
+
+         if (data?.Turnos && data.Turnos.length === 0) {
+            instrucciones = `
+No hay turnos disponibles para la práctica solicitada a partir de la fecha indicada.
+Si no se indicó fecha, significa que no hay turnos disponibles en el futuro para la combinación de parámetros indicada.
+Si no se indicó idCentroAtencion, significa que se buscó en todos los centros.
+`;
+         } else {
+            instrucciones = `
+# Instrucciones para gestionar la respuesta al usuario:
+- Agrupar los turnos por centro y fecha.
+- Informar fecha, hora, centro de atención. (*NO INFORMES EL RECURSO*, ya que se refiere al equipo o aparato disponible, no a un profesional, y puede confundir al usuario).
+- Luego de que el usuario elija un turno, informale el detalle completo del turno elegido.
+- Preguntale si quiere confirmar ese turno antes de asignarlo.
+`;
+         }
+
+         return {
+            success: true,
+            data,
+            instrucciones,
+         };
+      } catch (error: any) {
+         console.error("Error al buscar turnos para prácticas:", error.message);
+         return {
+            success: false,
+            error: error.message,
+         };
+      }
+   }
+});
+
+// ---------------- ASIGNAR TURNO DE ESTUDIO ----------------
+export const asignar_turno_estudios_hrf = tool({
+   name: "asignar_turno_estudios_hrf",
+   description: `
+   Asigna un turno de estudios o solicitud de estudio a un paciente. 
+   Preamble sample phrases:
+   *IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
+
+   - Estoy asignando el turno en el sistema un momento...
+   - Voy a asignar el turno en el sistema un momento...
+   `,
+   parameters: z.object({
+      IdTurno: z.number(),
+      IdPersona: z.number(),
+      IdCobertura: z.number(),
+      IdsPrestaciones: z.array(z.number()).optional().default([]),
+      IdSolicitudDeEstudio: z.string().optional(),
+   }),
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] asignar_turno_estudios_hrf:`, parameters);
+      const url = `${process.env.BACKEND_URL}/turnos/asignar-estudio`;
+
+      try {
+         const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parameters),
+         });
+
+         const raw = await response.text();
+         let data: any;
+         try {
+            data = raw ? JSON.parse(raw) : null;
+         } catch {
+            data = { result: raw };
+         }
+
+         if (!response.ok) {
+            // si backend devuelve { Mensaje: "..." } o { data: { Mensaje: "..." } }
+            const msg =
+               data?.Mensaje ??
+               data?.mensaje ??
+               data?.data?.Mensaje ??
+               data?.data?.mensaje ??
+               `HTTP ${response.status}`;
+
+            return {
+               success: false,
+               error: msg,
+               instrucciones: `Error al asignar turno: ${msg}. Informar al usuario que hubo un error al asignar el turno.`
+            };
+         }
+
+         //if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+         return { success: true, data, instrucciones: '*Importante:* Informa al usuario que el turno ha sido asignado exitosamente y recibirá un mail con la confirmación.' };
+      } catch (error: any) {
+         console.error("Error al asignar turno:", error.message);
+         return { success: false, error: error.message };
+      }
+   },
+});
 
 export const wait_for_user = tool({
   name: "wait_for_user",

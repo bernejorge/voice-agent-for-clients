@@ -5,6 +5,7 @@ import type { AgentInterface } from './../agent-interface.js';
 import { AuthenticateAgentHRF } from './auth-agent-hrf.js';
 import { AppointmentAgentHRF } from './appointment-agent-hrf.js';
 import { CancelAndRescheduleAgentHRF } from '../hrf/cancel-and-reschedule-agent-hrf.js';
+import { StudiesAgentHRF } from './studies-agent-hrf.js';
 
 
 export class OrquestationAgentHRF implements AgentInterface {
@@ -19,6 +20,7 @@ export class OrquestationAgentHRF implements AgentInterface {
       const authAgent = new AuthenticateAgentHRF().getAgent();
       const appointmentAgent = new AppointmentAgentHRF().getAgent();
       const cancelAndRescheduleAgent = new CancelAndRescheduleAgentHRF().getAgent();
+      const estudiesAgent = new StudiesAgentHRF().getAgent();
 
       let prefix_prompt= RECOMMENDED_PROMPT_PREFIX_ESP;
 
@@ -31,10 +33,12 @@ export class OrquestationAgentHRF implements AgentInterface {
       authAgent.instructions = prefix_prompt + "\n" + authAgent.instructions + "\n" + this.instruccionesCompartidas;
       appointmentAgent.instructions = prefix_prompt + "\n" + appointmentAgent.instructions + "\n" + this.instruccionesCompartidas;
       cancelAndRescheduleAgent.instructions = prefix_prompt + "\n" + cancelAndRescheduleAgent.instructions + "\n" + this.instruccionesCompartidas;
+      estudiesAgent.instructions = prefix_prompt + "\n" + estudiesAgent.instructions + "\n" + this.instruccionesCompartidas;
 
-      authAgent.handoffs = [appointmentAgent, cancelAndRescheduleAgent];
-      appointmentAgent.handoffs = [authAgent, cancelAndRescheduleAgent];
-      cancelAndRescheduleAgent.handoffs = [authAgent, appointmentAgent];      
+      authAgent.handoffs = [appointmentAgent, cancelAndRescheduleAgent, estudiesAgent];
+      appointmentAgent.handoffs = [authAgent, cancelAndRescheduleAgent, estudiesAgent];
+      cancelAndRescheduleAgent.handoffs = [authAgent, appointmentAgent, estudiesAgent];      
+      estudiesAgent.handoffs = [authAgent, appointmentAgent, cancelAndRescheduleAgent];
 
       return authAgent;
    }
