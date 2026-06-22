@@ -38,7 +38,7 @@ export const validarDni = tool({
    name: "validarDni",
    description:
       "Valida que el número de DNI o documento del usuario se encuentre empadronado en el sistema. Devuelve el IdPersona y las coberturas (cons sus IdCobertura) disponibles del usuario. "  +
-      "Antes de llamar a esta herramienta di al usuario: 'Un momneto voy a validar el DNI en el sistema.'",
+      "Antes de llamar a esta herramienta di al usuario en su propio idioma: 'Un momento voy a validar el DNI en el sistema.'",
    parameters: z.object({
       dni: z.number().describe("Número de DNI o documento del usuario a validar. Es un numero sin puntos de 7 u 8 digitos."),
    }),
@@ -58,6 +58,11 @@ export const validarDni = tool({
          const data = await response.json().catch(async () => ({ result: await response.text() }));
 
          console.info(`[${timestamp(context?.context as CallCtx)}] - From:[${callId}] DNI ${parameters.dni} `, data);
+
+         // Filtrar coberturas para que solo queden las permitidas para gestionar turnos en el HRF (PLAN MATERNO y BASICO)
+         const planesPermitidos = ['PLAN MATERNO', 'BASICO'];
+         data.coberturas = (data.coberturas || [])
+            .filter((c: any) => planesPermitidos.includes(c.plan));  
 
 
          return { success: true, data, dni_consultado: parameters.dni };
