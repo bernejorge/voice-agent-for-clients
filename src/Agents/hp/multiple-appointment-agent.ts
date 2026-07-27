@@ -12,10 +12,10 @@ import {
    hp_buscar_prestaciones,
    colgar_llamada,
    transferir_llamada,
-   Centros_de_Atencion_del_HP,
+   hp_obtener_todos_los_centros_atencion,
    hp_buscar_por_subespecialidad,
    hp_fecha_hora_argentina,
-   hp_obtener_horarios_de_atencion_profesional,
+   hp_buscar_horarios_profesional,
    hp_informacion_general,
    buscar_multiples_turnos,
    obtener_dias_feriados
@@ -110,13 +110,13 @@ export class MultipleAppointmentAgent implements AgentInterface {
             hp_buscar_profesional,
             hp_buscar_servicios_y_centros,
             hp_buscar_prestaciones,
-            Centros_de_Atencion_del_HP,
+            hp_obtener_todos_los_centros_atencion,
             hp_fecha_hora_argentina,
             obtener_dias_feriados,
             colgar_llamada,
             transferir_llamada,
             hp_buscar_por_subespecialidad,
-            hp_obtener_horarios_de_atencion_profesional,
+            hp_buscar_horarios_profesional,
             buscar_multiples_turnos
          ]
 

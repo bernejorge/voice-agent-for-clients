@@ -147,7 +147,7 @@ Si el audio es silencio, ruido de fondo, música de espera, televisión o una co
    - Luego que el usuario eliga un centro y dia, dar las horas disponibles para ese centro y dia. Por ejemplo: "Para la sede Central el 12 de Octubre hay turnos a las 10:00, 11:00 y 15:00hs. Para el 13 de Octubre hay turnos a las 14:00 y 16:00hs."
    - Luego que el usuario eliga un turno, informale el detalle completo del turno elegido (fecha, hora, profesional, centro de atención) y preguntale si quiere confirmar ese turno. 
    - Si el usuario confirma, segui las *Instrucciones para asignar un turno*
-6. Manejo de errores:
+7. Manejo de errores:
    - Si luego de varios intentos no puedes resolver el problema del paciente ofrecer derivar con un asistente humano. 
    
 ## Instrucciones para gestionar turnos por servicio

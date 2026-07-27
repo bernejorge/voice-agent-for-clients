@@ -46,6 +46,7 @@ export class DtmfDniHandler extends AbstractSessionHandler {
             });
          }
 
+         this.session.context.context.hashtag_pressed = true;
          // Avisamos al modelo
          this.session.sendMessage(`DNI ingresado completo: ${ultimosOcho}#`);
       }

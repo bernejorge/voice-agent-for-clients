@@ -10,10 +10,10 @@ import {
    hp_buscar_prestaciones,
    colgar_llamada,
    transferir_llamada,
-   Centros_de_Atencion_del_HP,
+   hp_obtener_todos_los_centros_atencion,
    hp_buscar_por_subespecialidad,
    hp_fecha_hora_argentina,
-   hp_obtener_horarios_de_atencion_profesional,
+   hp_buscar_horarios_profesional,
    hp_informacion_general
 } from '../../agent-tools/tools-hp.js';
 import type { CallCtx } from './../../Interfaces/CallCtx.js';
@@ -94,7 +94,7 @@ const appoimentAgentInstructions = `
 
 ## Instrucciones para informar los dias y horarios de atencion de un profesional
 1. No es necesario validar al paciente. Pide al usuario el nombre del profesional con el que desea conocer los días y horarios de atención y busca la similutes con la herramienta *"hp_buscar_profesional"*. Si hay más de un resultado como candidato pedile que elija una opción.
-2. Usa la herramienta *"hp_obtener_horarios_de_atencion_profesional"* con el IdProfesional recuperado del paso anterior, para obtener los días y horarios de atención del profesional.
+2. Usa la herramienta *"hp_buscar_horarios_profesional"* con el IdProfesional recuperado del paso anterior, para obtener los días y horarios de atención del profesional.
 3. Informa al usuario los días y horarios de atención del profesional.
 
 ## Instrucciones para validar al usuario
@@ -397,12 +397,12 @@ export class AppointmentAgent implements AgentInterface {
             hp_buscar_profesional,
             hp_buscar_servicios_y_centros,
             hp_buscar_prestaciones,
-            Centros_de_Atencion_del_HP,
+            hp_obtener_todos_los_centros_atencion,
             hp_fecha_hora_argentina,
             colgar_llamada,
             transferir_llamada,
             hp_buscar_por_subespecialidad,
-            hp_obtener_horarios_de_atencion_profesional,
+            hp_buscar_horarios_profesional,
             hp_informacion_general
          ]
 

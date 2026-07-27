@@ -51,6 +51,21 @@ Preamble sample phrases:
       console.log(`[${timestamp(ctx?.context as CallCtx)}] Validando DNI ${parameters.dni}...`);
       const url = `${process.env.BACKEND_URL}/turnoshp/validar-dni?dni=${parameters.dni}`;
 
+      if((ctx?.context as CallCtx)?.hashtag_pressed){
+         (ctx?.context as CallCtx).hashtag_pressed = false;
+      }else{
+         return { 
+            success: false, 
+            error: "No se detectó la tecla '#' después del DNI ingresado. Estas aluciando numeros. Espera un ingreso valido por parte del usuario. Recorda validar el formato correcto. Hasta que el usuario no ingrse el '#' no intentes validar el DNI. No intentes validar un DNI ingresado por audio. Solo valida el DNI ingresado por teclado numerico y que tenga el formato correcto. El formato correcto es: 'DNI ingresado completo: <número de DNI>#'.", 
+            instrucciones: `
+            ## Instrucciones para manejar este error
+            - Has intentado validar un DNI sin que el usuario haya presionado la tecla '#' al final del ingreso del DNI. Esto indica que el usuario no ha terminado de ingresar el DNI correctamente.
+            - No intentes validar un DNI ingresado por audio. Solo valida el DNI ingresado por teclado numerico y que tenga el formato correcto. El formato correcto es: 'DNI ingresado completo: <número de DNI>#'.
+            - Volve a solicitar al usuario que ingrese el número de DNI del paciente utilizando el teclado del teléfono y que presione la tecla numeral al finalizar. Ejemplo: "Por favor, ingresa el DNI del paciente seguido de la tecla numeral."
+            `
+         };
+      }
+
       try {
 
          if (!parameters.dni) return { success: false, error: "El número de DNI es requerido para validar al paciente." };
@@ -177,6 +192,37 @@ export const hp_buscar_servicios = tool({
       }
    },
 });
+
+// ---------------- BUSCAR PRESTACION ----------------
+export const hp_buscar_prestacion = tool({
+   name: "hp_buscar_prestacion",
+   description:
+      `Busca servicios y prestaciones médicas del hospital según el texto de consulta.
+      Preamble sample phrases:
+      *IMPORTANT: You must use the preambles before calling the tool. Remember say the preambles in the same language the user is speaking. For this tool, you can use these examples in the language the user is using.
+      - Estoy buscando los servicios en el sistema un momento...
+      - Voy a consultar en el sistema los servicios disponibles para esa consulta.
+      `,
+   parameters: z.object({
+      consulta: z.string().describe("Texto con la consulta del usuario."),
+   }),
+   execute: async (parameters, ctx) => {
+      console.log(`[${timestamp(ctx?.context as CallCtx)}] hp_buscar_prestacion:`, parameters);
+      const url = `${process.env.BACKEND_URL}/turnoshp/buscar_prestacion?inputText=${parameters.consulta}`;
+
+      try {
+         const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
+         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+         const data = await response.json().catch(async () => ({ result: await response.text() }));
+         return { success: true, data };
+      } catch (error: any) {
+         console.error("Error al buscar prestaciones:", error.message);
+         return { success: false, error: error.message };
+      }
+   },
+});
+
 
 // ---------------- OBTENER CENTROS ----------------
 export const hp_obtener_centros_para_el_servicio = tool({
@@ -768,7 +814,7 @@ export const hp_fecha_hora_argentina = tool({
 
 
 // ---------------- OBTENER TODOS LOS CENTROS DE ATENCIÓN DEL HP ----------------
-export const Centros_de_Atencion_del_HP = tool({
+export const hp_obtener_todos_los_centros_atencion = tool({
    name: "hp_obtener_todos_los_centros_atencion",
    description: "Recupera la lista de todos los centros de atención del Hospital Privado de Córdoba.",
    parameters: z.object({}),
@@ -936,14 +982,14 @@ export const hp_buscar_por_subespecialidad = tool({
    }
 });
 
-export const hp_obtener_horarios_de_atencion_profesional = tool({
-   name: "hp_obtener_horarios_de_atencion_profesional",
+export const hp_buscar_horarios_profesional = tool({
+   name: "hp_buscar_horarios_profesional",
    description: `Utiliza esta herramienta para obtener los horarios de atención de un profesional en el hospital. Devuelve los días y horas en que el profesional atiende, agrupados por centro de atención y servicio.`,
    parameters: z.object({
       IdProfesional: z.number().describe("ID del profesional a consultar."),
    }),
    execute: async (parameters, context) => {
-      console.log(`[${timestamp(context?.context as CallCtx)}] hp_obtener_horarios_de_atencion_profesional:`, parameters);
+      console.log(`[${timestamp(context?.context as CallCtx)}] hp_buscar_horarios_profesional:`, parameters);
       const callId = (context?.context as CallCtx)?.callId || "desconocido";
       const url = `${process.env.BACKEND_URL}/turnoshp/recuperar_horarios_atencion?IdProfesional=${parameters.IdProfesional}`;
       try {
@@ -1587,8 +1633,8 @@ Si no se indicó idCentroAtencion, significa que se buscó en todos los centros.
 });
 
 // ---------------- ASIGNAR TURNO DE ESTUDIO ----------------
-export const asignar_turno_estudios = tool({
-   name: "asignar_turno_estudios",
+export const asignar_turno_estudios_hp = tool({
+   name: "asignar_turno_estudios_hp",
    description: `
    Asigna un turno de estudios o solicitud de estudio a un paciente. 
    Preamble sample phrases:
@@ -1601,12 +1647,26 @@ export const asignar_turno_estudios = tool({
       IdTurno: z.number(),
       IdPersona: z.number(),
       IdCobertura: z.number(),
-      IdsPrestaciones: z.array(z.number()).optional().default([]),
+      IdsPrestaciones: z.array(z.number()).optional().default([]),   
       IdSolicitudDeEstudio: z.string().optional(),
    }),
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] asignar_turno_estudios:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnoshp/asignar-estudio`;
+
+      if(parameters.IdsPrestaciones.length === 0) {
+         const instrucciones = `
+# Instrucciones para continuar con la busqueda de turnos para prácticas
+- No se proporcionó ningún idPrestacion. Es necesario al menos un idPrestacion para buscar turnos para prácticas.
+- Revisa la conversacion con el usuario y determina si se puede obtener un idPrestacion válido antes de continuar con la búsqueda de turnos para estudios.
+
+`;
+         return {
+            success: false,
+            error: "Al menos un idPrestacion es requerido para buscar turnos para prácticas.",
+            instrucciones: instrucciones
+         };
+      }
 
       try {
          const response = await fetch(url, {

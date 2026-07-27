@@ -2,6 +2,7 @@ export type CallCtx = {
    callId: string; 
    sipHost?: string;
    phoneNumber?: string;
+   hashtag_pressed?: boolean;
    pacientes?: datosPaciente[]; // Agregamos un campo para almacenar los datos del paciente, incluyendo su DNI, nombre, ID de persona y cobertura. 
 };
 

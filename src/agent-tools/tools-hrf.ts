@@ -49,6 +49,23 @@ export const validarDni = tool({
       const url = `${process.env.BACKEND_URL}/turnos/validar-dni?dni=${parameters.dni}`;
 
       try {
+
+         if((context?.context as CallCtx)?.hashtag_pressed){
+            (context?.context as CallCtx).hashtag_pressed = false;
+         }else{
+            return { 
+               success: false, 
+               error: "No se detectó la tecla '#' después del DNI ingresado. Estas aluciando numeros. Espera un ingreso valido por parte del usuario. Recorda validar el formato correcto. Hasta que el usuario no ingrse el '#' no intentes validar el DNI. No intentes validar un DNI ingresado por audio. Solo valida el DNI ingresado por teclado numerico y que tenga el formato correcto. El formato correcto es: 'DNI ingresado completo: <número de DNI>#'.", 
+               instrucciones: `
+               ## Instrucciones para manejar este error
+               - Has intentado validar un DNI sin que el usuario haya presionado la tecla '#' al final del ingreso del DNI. Esto indica que el usuario no ha terminado de ingresar el DNI correctamente.
+               - No intentes validar un DNI ingresado por audio. Solo valida el DNI ingresado por teclado numerico y que tenga el formato correcto. El formato correcto es: 'DNI ingresado completo: <número de DNI>#'.
+               - Volve a solicitar al usuario que ingrese el número de DNI del paciente utilizando el teclado del teléfono y que presione la tecla numeral al finalizar. Ejemplo: "Por favor, ingresa el DNI del paciente seguido de la tecla numeral."
+               `
+            };
+         }
+
+
          if (!parameters.dni) return { success: false, error: "El número de DNI es requerido para validar al paciente." };
          if (parameters.dni < 1_000_000 || parameters.dni > 99_999_999) return { success: false, error: "El número de DNI ingresado no es válido. Debe tener entre 7 y 8 dígitos." };
 
@@ -1033,6 +1050,20 @@ Preamble sample phrases:
          parameters
       );
 
+      if(parameters.idsPrestaciones.length === 0) {
+         const instrucciones = `
+# Instrucciones para continuar con la busqueda de turnos para prácticas
+- No se proporcionó ningún idPrestacion. Es necesario al menos un idPrestacion para buscar turnos para prácticas.
+- Revisa la conversacion con el usuario y determina si se puede obtener un idPrestacion válido antes de continuar con la búsqueda de turnos para estudios.
+
+`;
+         return {
+            success: false,
+            error: "Al menos un idPrestacion es requerido para buscar turnos para prácticas.",
+            instrucciones: instrucciones
+         };
+      }
+
       const url = `${process.env.BACKEND_URL}/turnos/obtener_primeros_turnos_disponibles_para_practicas`;
 
       if (!parameters.idServicio) {
@@ -1165,6 +1196,20 @@ export const asignar_turno_estudios_hrf = tool({
    execute: async (parameters, ctx) => {
       console.log(`[${timestamp(ctx?.context as CallCtx)}] asignar_turno_estudios_hrf:`, parameters);
       const url = `${process.env.BACKEND_URL}/turnos/asignar-estudio`;
+
+      if(parameters.IdsPrestaciones.length === 0) {
+         const instrucciones = `
+# Instrucciones para continuar con la busqueda de turnos para prácticas
+- No se proporcionó ningún idPrestacion. Es necesario al menos un idPrestacion para buscar turnos para prácticas.
+- Revisa la conversacion con el usuario y determina si se puede obtener un idPrestacion válido antes de continuar con la búsqueda de turnos para estudios.
+
+`;
+         return {
+            success: false,
+            error: "Al menos un idPrestacion es requerido para buscar turnos para prácticas.",
+            instrucciones: instrucciones
+         };
+      }
 
       try {
          const response = await fetch(url, {

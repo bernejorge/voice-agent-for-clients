@@ -35,7 +35,6 @@ const StudiesAgentInstructions = `
 Usa preambles cortos solo cuando ayuden al usuario a comprender que se está realizando algún trabajo.
 
 ### Cuando usar preambles:
-- Antes de llamar a la herramienta *validarDni*
 - Antes de llamar a la herramienta *hrf_buscar_servicios*
 - Antes de llamar a la herramienta *hrf_buscar_turnos_para_practicas*
 - Antes de llamar a la herramienta *asignar_turno_estudios_hrf*

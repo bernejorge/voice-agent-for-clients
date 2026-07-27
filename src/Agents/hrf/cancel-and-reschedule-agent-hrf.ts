@@ -36,13 +36,8 @@ Usa preambles cortos solo cuando ayuden al usuario a comprender que se está rea
 - Antes de llamar a la herramienta *asignar_turno*
 
 ### Cuando no usar preambles:
-- Al llamar a la herramienta *hrf_obtener_centros_para_el_servicio*
-- Al llamar a la herramienta *hrf_recuperar_servicios_y_prestaciones*
-- Al llamar a la herramienta *hrf_obtener_todos_los_centros_atencion*
-- Al llamar a la herramienta *hrf_buscar_prestaciones*
 - Al llamar a la herramienta *obtener_dias_feriados*
 - Al llamar a la herramienta *hrf_fecha_hora_argentina*
-- Al llamar a la herramienta *hrf_informacion_general*
 - Al llamar a la herramienta *wait_for_user*
 - Al usar handoffs o derivaciones a otros agentes IA (transfer_to_<nombre_del_agente>)
 
@@ -112,8 +107,6 @@ Cuando el usuario solicite reprogramar un turno o cambiarlo por otro, sigue esto
 5. Luego de asignar el nuevo turno, informa al usuario que el nuevo turno ha sido asignado exitosamente y que ahora vas a cancelar el turno anterior.
 6. Usa la herramienta *"anular_turno"* con el IdTurno seleccionado por el usuario y el IdPersona, para cancelar el turno anterior.
 
-## Instrucciones para consultar los turnos asignados a un paciente
-- Deriva al agente especializado en cancelacion, consulta de turnos asignados y reprogramacion de turnos. 
 
 `;
 
