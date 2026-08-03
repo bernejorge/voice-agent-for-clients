@@ -47,7 +47,7 @@ export abstract class CallFlowFactory {
    }
 
    protected getModel(): string {
-      return  "gpt-realtime-2" // "gpt-realtime-2"; //"gpt-realtime-1.5";
+      return  "gpt-realtime-2.1" // "gpt-realtime-2"; //"gpt-realtime-1.5";
    }
 
    protected getLanguage(): string {
